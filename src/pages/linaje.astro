@@ -22,10 +22,8 @@ const exp = (id: string) => experiencia.find((e) => e.id === id)!;
 const proj = (id: string) => proyectos.find((p) => p.id === id)!;
 const linksProj = (id: string): [string, string][] => {
   const p = proj(id);
-  return [
-    ...(p.sitio ? [["Sitio", p.sitio] as [string, string]] : []),
-    ...(p.codigo ? [["Código", p.codigo] as [string, string]] : []),
-  ];
+  const sitios: [string, string][] = p.extra ? p.extra.map((l) => [l.label, l.href]) : p.sitio ? [["Sitio", p.sitio]] : [];
+  return [...sitios, ...(p.codigo ? [["Código", p.codigo] as [string, string]] : [])];
 };
 
 const nodos: Nodo[] = [
@@ -207,7 +205,7 @@ const nodos: Nodo[] = [
     deps: ["int_frontend_interactivo", "fct_espacioamine"],
     tags: ["web", "freelance"],
     columnas: [["Año", String(proj("experimentos_amine").anio)], ["Stack", proj("experimentos_amine").stack.join(", ")]],
-    links: [...(proj("experimentos_amine").extra ?? []).map((l) => [l.label, l.href] as [string, string]), ...linksProj("experimentos_amine").filter(([k]) => k === "Código")],
+    links: linksProj("experimentos_amine"),
   },
   {
     id: "fct_tienda_online",

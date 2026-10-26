@@ -111,16 +111,20 @@ export interface Proyecto {
 export const proyectos: Proyecto[] = [
   {
     id: "tienda_online",
-    titulo: "Tienda online con tracking avanzado de Meta",
+    titulo: "Elargot: tiendas online con tracking de Meta",
     area: "web",
     anio: 2026,
-    estado: "Publicado",
+    estado: "Demo publicada",
     descripcion:
-      "Plataforma e-commerce SaaS multitenant para gestionar tiendas online de punta a punta: catálogo, carrito y checkout con MercadoPago, panel de administración y tracking de Meta (Pixel + Conversions API) para optimizar campañas. Backend Fastify + PostgreSQL, storefront Astro y deploy en Railway.",
+      "Plataforma e-commerce SaaS multitenant para que comercios locales vendan online: catálogo, carrito y checkout con MercadoPago, panel de administración, ocho plantillas con paletas intercambiables y tracking de Meta (Pixel + Conversions API) configurado de fábrica. Backend Fastify + PostgreSQL y storefront Astro.",
     stack: ["Astro", "Node.js", "Fastify", "PostgreSQL", "MercadoPago"],
-    imagen: "demo-eshop.png",
+    imagen: "demo-elargot.jpg",
     codigo: null,
-    sitio: "https://storefront-production-d033.up.railway.app/",
+    sitio: "https://demo.elargot.com",
+    extra: [
+      { label: "Tienda demo", href: "https://demo.elargot.com" },
+      { label: "Landing", href: "https://elargot.com" },
+    ],
     destacado: true,
   },
   {
