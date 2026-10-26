@@ -1,16 +1,19 @@
 ---
 const base = import.meta.env.BASE_URL;
 const technologies = [
-  "astro",
-  "tailwindcss",
-  "HTML5",
-  "CSS3",
-  "javaScript",
-  "typeScript",
-  "nodejs",
-  "git",
-  "mysql",
-  "bash",
+  { icon: "dbt", label: "dbt" },
+  { icon: "python", label: "Python" },
+  { icon: "mysql", label: "SQL" },
+  { icon: "astro", label: "Astro" },
+  { icon: "tailwindcss", label: "Tailwind CSS" },
+  { icon: "typeScript", label: "TypeScript" },
+  { icon: "javaScript", label: "JavaScript" },
+  { icon: "threejs", label: "Three.js" },
+  { icon: "nodejs", label: "Node.js" },
+  { icon: "HTML5", label: "HTML5" },
+  { icon: "CSS3", label: "CSS3" },
+  { icon: "git", label: "Git" },
+  { icon: "bash", label: "Bash" },
 ];
 ---
 
@@ -26,8 +29,8 @@ const technologies = [
           aria-hidden={index >= technologies.length ? "true" : "false"}
         >
           <img
-            src={`${base}svg/${tech}.svg`}
-            alt={tech}
+            src={`${base}svg/${tech.icon}.svg`}
+            alt={tech.label}
             class="h-7 w-auto object-contain transition-transform group-hover:scale-110 opacity-60"
             width="30"
             height="30"
@@ -35,7 +38,7 @@ const technologies = [
             decoding="async"
           />
           <span class="text-lg font-medium text-[var(--white-icon)] whitespace-nowrap">
-            {tech.charAt(0).toUpperCase() + tech.slice(1)}
+            {tech.label}
           </span>
         </div>
       ))

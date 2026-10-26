@@ -4,10 +4,11 @@ const base = import.meta.env.BASE_URL;
 interface Project {
   title: string;
   image: string;
-  link: string;
+  link: string | null; // null: repositorio privado
   preview: string | null;
   status: string;
   description: string;
+  extraLinks?: { label: string; href: string }[];
   comingSoon?: boolean;
 }
 
@@ -15,7 +16,7 @@ const projects: Project[] = [
   {
     title: "Tienda online con tracking avanzado de Meta",
     image: `${base}demo-eshop.png`,
-    link: "https://github.com/Ign4cho",
+    link: null,
     preview: "https://storefront-production-d033.up.railway.app/",
     status: "Publicado",
     description: "Plataforma e-commerce SaaS multitenant para gestionar tiendas online de punta a punta: catálogo, carrito y checkout con MercadoPago, panel de administración y tracking de Meta (Pixel + Conversions API) para optimizar campañas. Backend Fastify + PostgreSQL, storefront Astro y deploy en Railway.",
@@ -26,15 +27,20 @@ const projects: Project[] = [
     link: "https://github.com/Ign4cho/amine-web",
     preview: "https://espacioamine.com",
     status: "Publicado",
-    description: "Sitio institucional para agencia de marketing digital con estructura freelancer profesional.",
+    description: "Sitio institucional para una agencia de marketing digital: servicios, equipo, aliados y un blog con panel de administración propio. Astro, Tailwind y Alpine.js.",
   },
   {
-    title: "Dashboard de Analítica Web",
-    image: `${base}demo-analytics.png`,
-    link: "https://github.com/Ign4cho",
-    preview: "#",
-    status: "Demo",
-    description: "Tablero interactivo con KPIs, gráficos de tráfico y métricas de conversión en tiempo real.",
+    title: "Amine: tres experimentos de diseño",
+    image: `${base}demo-amine-experimentos.jpg`,
+    link: "https://github.com/Ign4cho/amine-web/tree/preview-octubre/experimentos",
+    preview: "https://fold.espacioamine.com",
+    status: "Publicado",
+    description: "El mismo contenido de espacioamine.com contado de tres formas: un fanzine que se despliega en 3D con el scroll (Three.js), una mesa de trabajo con objetos arrastrables (GSAP) y una revista editorial.",
+    extraLinks: [
+      { label: "Pliego 3D", href: "https://fold.espacioamine.com" },
+      { label: "Mesa", href: "https://mesa.espacioamine.com" },
+      { label: "Editorial", href: "https://editorial.espacioamine.com" },
+    ],
   },
 ];
 ---
@@ -76,8 +82,22 @@ const projects: Project[] = [
                     {project.status}
                   </span>
                   <p class="text-sm text-[var(--white-icon)] mt-1 pr-4">{project.description}</p>
+                  {project.extraLinks && (
+                    <div class="flex flex-wrap gap-2 mt-3">
+                      {project.extraLinks.map((l) => (
+                        <a
+                          target="_blank"
+                          href={l.href}
+                          class="text-sm px-3 py-1 rounded-full border border-[var(--white-icon-tr)] text-[var(--white-icon)] hover:text-white hover:bg-[var(--white-icon-tr)] transition duration-300"
+                        >
+                          {l.label} ↗
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div class="flex gap-2 ml-auto self-start pt-1">
+                  {project.link && (
                   <a
                     target="_blank"
                     href={project.link}
@@ -93,6 +113,7 @@ const projects: Project[] = [
                       <path d="M24 12L18.3431 17.6569L16.9289 16.2426L21.1716 12L16.9289 7.75736L18.3431 6.34315L24 12ZM2.82843 12L7.07107 16.2426L5.65685 17.6569L0 12L5.65685 6.34315L7.07107 7.75736L2.82843 12ZM9.78845 21H7.66009L14.2116 3H16.3399L9.78845 21Z" />
                     </svg>
                   </a>
+                  )}
                   {!project.comingSoon && project.preview && (
                     <a
                       target="_blank"

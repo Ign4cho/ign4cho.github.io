@@ -21,7 +21,7 @@ const CategoryIcons = {
       <path d="M3.78307 2.82598L12 1L20.2169 2.82598C20.6745 2.92766 21 3.33347 21 3.80217V13.7889C21 16.1277 19.7885 18.3039 17.7671 19.5285L12 23L6.23286 19.5285C4.21149 18.3039 3 16.1277 3 13.7889V3.80217C3 3.33347 3.32549 2.92766 3.78307 2.82598ZM12 15L16.5 10.5L15.0858 9.08579L12 12.1716L10.4142 10.5858L9 12L12 15Z"></path>
     </svg>
   ),
-  "Data & Business Intelligence": (
+  "Datos y BI": (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
@@ -37,20 +37,21 @@ const SkillsList = () => {
   const [openItem, setOpenItem] = useState<string | null>(null);
 
   const skills = {
+    "Datos y BI": [
+      "Modelado de warehouses con dbt y SQL Server",
+      "Tests, documentación y linaje de datos",
+      "Integración de APIs y cargas con Python y SQL",
+      "Tableros en Power BI y Looker Studio",
+    ],
     "Desarrollo Web": [
-      "Landing pages y sitios corporativos",
-      "Portfolios y webs personales",
-      "Integración de lógica de servidor con Node.js",
+      "Sitios institucionales y landing pages con Astro",
+      "Interacción y animación: GSAP, Three.js, scroll",
+      "E-commerce con Node.js y PostgreSQL",
     ],
     "QA / Testing": [
       "Pruebas funcionales (caja negra)",
       "Diseño y ejecución de casos de prueba",
       "Validación de APIs con Postman",
-    ],
-    "Data & Business Intelligence": [
-      "Dashboards en Looker Studio y Power BI",
-      "Definición y seguimiento de KPIs",
-      "Consultas y modelado de datos con SQL",
     ],
   };
 

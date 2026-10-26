@@ -1,0 +1,74 @@
+---
+interface Job {
+  company: string;
+  role: string;
+  date: string;
+  description: string;
+  tags: string[];
+}
+
+const jobs: Job[] = [
+  {
+    company: "Datyo",
+    role: "Analista de datos",
+    date: "Sep 2026 — actualidad",
+    description: "Consultora de datos. Mantengo el warehouse en SQL Server de la cuenta principal, migro las transformaciones de procedimientos almacenados a dbt con tests y linaje, integro la API de un sistema de RR.HH. y armo los tableros de productividad en Power BI.",
+    tags: ["dbt", "SQL Server", "Power BI", "Python"],
+  },
+  {
+    company: "Freelance",
+    role: "Desarrollador web",
+    date: "Dic 2025 — actualidad",
+    description: "Sitio de espacioamine.com con blog y panel de administración, tres experimentos de diseño interactivos sobre el mismo contenido y una tienda online multitenant.",
+    tags: ["Astro", "Tailwind", "GSAP", "Three.js", "Node.js"],
+  },
+  {
+    company: "WES",
+    role: "Pasantía en calidad de software",
+    date: "Jun 2025 — Jul 2025",
+    description: "Pruebas funcionales de caja negra, diseño de casos de prueba y validación de APIs con Postman.",
+    tags: ["QA", "Postman"],
+  },
+  {
+    company: "Infocontrol",
+    role: "Pasantía de Business Intelligence",
+    date: "Ago 2024 — Oct 2024",
+    description: "Dashboards en Looker Studio, definición de KPIs, automatización de flujos de datos y documentación de procesos.",
+    tags: ["Looker Studio", "KPIs"],
+  },
+];
+---
+
+<section
+  id="experience"
+  class="py-12 border-t border-[#ffffff10] text-[var(--white)]"
+>
+  <div class="max-w-5xl mx-auto">
+    <h2 class="text-lg text-[var(--sec)] mb-2 shiny-sec">Dónde trabajé</h2>
+    <h3 class="text-4xl md:text-5xl font-medium mb-8">Experiencia</h3>
+
+    <ol class="space-y-4">
+      {
+        jobs.map((job) => (
+          <li class="grid md:grid-cols-[220px_1fr] gap-2 md:gap-8 p-5 md:p-6 rounded-2xl bg-[#1414149c] border border-[var(--white-icon-tr)]">
+            <div>
+              <p class="text-xl font-semibold">{job.company}</p>
+              <p class="text-sm text-[var(--white-icon)] mt-1">{job.date}</p>
+            </div>
+            <div>
+              <p class="text-lg">{job.role}</p>
+              <p class="text-sm text-[var(--white-icon)] mt-1">{job.description}</p>
+              <ul class="flex flex-wrap gap-2 mt-3">
+                {job.tags.map((tag) => (
+                  <li class="text-xs px-3 py-1 rounded-full border border-[var(--white-icon-tr)] text-[var(--white-icon)]">
+                    {tag}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
