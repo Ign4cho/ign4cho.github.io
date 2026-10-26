@@ -19,6 +19,7 @@ export const perfil = {
   github: "https://github.com/Ign4cho",
   linkedin: "https://www.linkedin.com/in/ignacio-colome/",
   inicio: 2020, // ingreso a Sistemas de Información (UNSJ)
+  disponibilidad: "Disponible para trabajos freelance",
 };
 
 export interface Experiencia {
@@ -42,7 +43,7 @@ export const experiencia: Experiencia[] = [
     hasta: null,
     area: "datos",
     descripcion:
-      "Consultora de datos. Mantengo el warehouse en SQL Server de la cuenta principal, migro las transformaciones de procedimientos almacenados a dbt con tests y linaje, integro la API de un sistema de RR.HH. y armo los tableros de productividad en Power BI.",
+      "Consultora de datos. Mantengo el warehouse en SQL Server de la cuenta principal, migro las transformaciones de procedimientos almacenados a dbt con tests y linaje, integro la API de Humand (RR.HH.) y armo los tableros de productividad en Power BI.",
     tags: ["dbt", "SQL Server", "Power BI", "Python"],
     destacada: true,
   },
@@ -161,18 +162,18 @@ export const proyectos: Proyecto[] = [
     destacado: true,
   },
   {
-    id: "eda_transporte",
-    titulo: "Análisis exploratorio de datos de transporte",
+    id: "tesis_sube",
+    titulo: "Trasbordos del transporte público con cadenas de Markov",
     area: "datos",
-    anio: 2024,
-    estado: "Notebook",
+    anio: 2026,
+    estado: "Trabajo Final de Licenciatura",
     descripcion:
-      "Limpieza, tipado y análisis exploratorio de dos tablas de un sistema de transporte (extracciones y posiciones GPS) con pandas y matplotlib.",
-    stack: ["Python", "pandas", "matplotlib"],
-    imagen: null,
-    codigo: "https://github.com/Ign4cho/ProyectoBI",
+      "Modelado de los patrones de trasbordo del sistema SUBE en el Gran San Juan con cadenas de Markov de tiempo discreto, sobre quince meses de datos. Una parte, la calibración por simulación del test de orden markoviano en tablas ralas con un millón de trasbordos, la presenté en el I Encuentro Conjunto SBM-UMA 2026, en Mar del Plata.",
+    stack: ["Python", "pandas", "numpy", "scipy", "networkx"],
+    imagen: "demo-tesis-uma.jpg",
+    codigo: null,
     sitio: null,
-    destacado: false,
+    destacado: true,
   },
 ];
 
@@ -204,7 +205,7 @@ export const habilidades: Habilidad[] = [
 export const estudios = [
   {
     institucion: "Universidad Nacional de San Juan",
-    titulo: "Licenciatura en Sistemas de Información (cursado completo)",
+    titulo: "Licenciatura en Sistemas de Información",
     desde: 2020,
   },
   {
@@ -214,8 +215,19 @@ export const estudios = [
   },
   {
     institucion: "Cambridge Assessment International Education",
-    titulo: "First Language English (2018) y English as a Second Language (2017)",
+    titulo: "Exámenes de inglés: First Language English (2018) y English as a Second Language (2017)",
     desde: 2017,
+  },
+];
+
+export const charlas = [
+  {
+    titulo:
+      "Calibración por simulación del contraste de orden markoviano en tablas de contingencia ralas: análisis empírico sobre un millón de trasbordos del transporte público",
+    evento: "I Encuentro Conjunto SBM-UMA · Comunicaciones Científicas, sesión Estadística, Probabilidades y Ciencias de Datos",
+    lugar: "Universidad Nacional de Mar del Plata",
+    fecha: "2026-09",
+    coautor: "Leonel Ganga",
   },
 ];
 

@@ -2,7 +2,7 @@
 // Vista «Dashboard»: el portfolio como informe de Power BI. Mismo contenido que
 // la clásica (src/data/perfil.ts) más los repos públicos de GitHub al momento del build.
 import ViewLayout from "@/layouts/ViewLayout.astro";
-import { perfil, experiencia, proyectos, estudios, AREAS, HOY, meses } from "@/data/perfil";
+import { perfil, experiencia, proyectos, estudios, charlas, AREAS, HOY, meses } from "@/data/perfil";
 
 const base = import.meta.env.BASE_URL;
 
@@ -35,6 +35,7 @@ const data = {
         <p class="db-kicker">Informe de perfil · Página <span data-page-n>1</span> de 3</p>
         <h1>{perfil.nombre}</h1>
         <p class="db-sub">{perfil.rol} · {perfil.ubicacion}</p>
+        <p class="db-status"><i aria-hidden="true"></i>{perfil.disponibilidad}</p>
       </div>
       <p class="db-meta">
         Actualizado {HOY}<br />
@@ -128,6 +129,23 @@ const data = {
                         <small>{e.institucion}</small>
                       </td>
                       <td class="num">{e.desde}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+            <header class="db-h-gap"><h2>Charlas</h2></header>
+            <table class="db-table">
+              <thead><tr><th>Charla</th><th>Fecha</th></tr></thead>
+              <tbody>
+                {
+                  charlas.map((c) => (
+                    <tr>
+                      <td>
+                        {c.titulo}
+                        <small>{c.evento} · {c.lugar} · con {c.coautor}</small>
+                      </td>
+                      <td class="num">{c.fecha}</td>
                     </tr>
                   ))
                 }
@@ -236,6 +254,23 @@ const data = {
   }
   .db-meta {
     text-align: right;
+  }
+  .db-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .db-status i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--a-qa);
+  }
+  .db-h-gap {
+    margin-top: 20px;
   }
   @media (max-width: 767px) {
     .db-top {

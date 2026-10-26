@@ -3,7 +3,7 @@
 // navegador (SELECT, WHERE, ORDER BY, LIMIT, GROUP BY con COUNT) más comandos
 // estilo psql. Las tablas salen de src/data/perfil.ts.
 import ViewLayout from "@/layouts/ViewLayout.astro";
-import { perfil, experiencia, proyectos, habilidades, estudios, vistas, meses, AREAS } from "@/data/perfil";
+import { perfil, experiencia, proyectos, habilidades, estudios, charlas, vistas, meses, AREAS } from "@/data/perfil";
 
 const base = import.meta.env.BASE_URL;
 const site = Astro.site!.href.replace(/\/$/, "");
@@ -29,6 +29,7 @@ const tablas = {
   })),
   habilidades: habilidades.map((h) => ({ nombre: h.nombre, area: h.area === "general" ? "general" : AREAS[h.area].toLowerCase() })),
   estudios: estudios.map((e) => ({ institucion: e.institucion, titulo: e.titulo, desde: e.desde })),
+  charlas: charlas.map((c) => ({ titulo: c.titulo, evento: c.evento, lugar: c.lugar, fecha: c.fecha, coautor: c.coautor })),
   contacto: [
     { medio: "email", valor: `mailto:${perfil.email}` },
     { medio: "linkedin", valor: perfil.linkedin },
@@ -44,7 +45,8 @@ const sugerencias = [
   "SELECT nombre, stack, sitio FROM proyectos WHERE area = 'web';",
   "SELECT area, COUNT(*) FROM habilidades GROUP BY area;",
   "SELECT empresa, meses FROM experiencia ORDER BY meses DESC LIMIT 3;",
-  "SELECT * FROM proyectos WHERE stack LIKE '%dbt%' OR area = 'datos';",
+  "SELECT * FROM proyectos WHERE stack LIKE '%python%' OR area = 'datos';",
+  "SELECT titulo, evento, fecha FROM charlas;",
   "cv",
   "contacto",
 ];
@@ -247,7 +249,7 @@ const sugerencias = [
   type Fila = Record<string, Valor>;
   const { tablas, perfil } = JSON.parse(document.getElementById("tm-data")!.textContent!) as {
     tablas: Record<string, Fila[]>;
-    perfil: { nombre: string; rol: string; ubicacion: string; email: string };
+    perfil: { nombre: string; rol: string; ubicacion: string; email: string; disponibilidad: string };
   };
 
   const out = document.querySelector<HTMLElement>("[data-out]")!;
@@ -440,7 +442,7 @@ const sugerencias = [
       print(
         [
           `<span class="k">${esc(perfil.nombre)}</span> · ${esc(perfil.rol)}`,
-          `<span class="d">${esc(perfil.ubicacion)}</span>`,
+          `<span class="d">${esc(perfil.ubicacion)}</span> · <span class="k">${esc(perfil.disponibilidad)}</span>`,
           ``,
           `Hoy:`,
           ...actual.map((e) => `  • ${esc(String(e.rol))} en ${esc(String(e.empresa))} <span class="d">(${esc(String(e.stack))})</span>`),

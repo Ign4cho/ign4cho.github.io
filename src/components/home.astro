@@ -1,12 +1,17 @@
 ---
 import LogoWall from "../components/logoWall.astro";
 import SkillsList from "../React/SkillsList.tsx";
+import { perfil } from "@/data/perfil";
 const base = import.meta.env.BASE_URL;
 ---
 
 <section class="text-[var(--white)] mt-12 md:mt-0" id="home">
   <div class="max-w-5xl mx-auto space-y-8 md:py-36 pb-14">
     <div class="text-left space-y-4">
+      <p class="inline-flex items-center gap-2 text-sm text-[var(--white-icon)] border border-[var(--white-icon-tr)] rounded-full px-3 py-1">
+        <span class="size-2 rounded-full bg-[#A9FF5B]" aria-hidden="true"></span>
+        {perfil.disponibilidad}
+      </p>
 <p class="text-md md:text-lg text-[var(--white-icon)] shiny-white">
         Buenas, soy Ignacio Colomé
       </p>

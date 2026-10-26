@@ -3,7 +3,7 @@
 // primeras experiencias) → staging (habilidades base) → intermedios → marts
 // (trabajos y proyectos) → exposure (este portfolio).
 import ViewLayout from "@/layouts/ViewLayout.astro";
-import { perfil, experiencia, proyectos, periodo } from "@/data/perfil";
+import { perfil, experiencia, proyectos, charlas, periodo } from "@/data/perfil";
 
 type Tipo = "source" | "model" | "exposure";
 interface Nodo {
@@ -33,20 +33,20 @@ const nodos: Nodo[] = [
     tipo: "source",
     capa: 0,
     titulo: "UNSJ · Sistemas de Información",
-    descripcion: "Técnico Universitario en Sistemas de Información y cursado completo de la Licenciatura en la Universidad Nacional de San Juan.",
+    descripcion: "Licenciado y Técnico Universitario en Sistemas de Información por la Universidad Nacional de San Juan.",
     deps: [],
     tags: ["formacion"],
-    columnas: [["Desde", String(perfil.inicio)], ["Títulos", "Técnico Universitario · Licenciatura (cursado completo)"]],
+    columnas: [["Desde", String(perfil.inicio)], ["Títulos", "Licenciatura · Técnico Universitario"]],
   },
   {
     id: "cambridge.ingles",
     tipo: "source",
     capa: 0,
-    titulo: "Cambridge · Inglés",
-    descripcion: "First Language English (2018) y English as a Second Language (2017), Cambridge Assessment International Education.",
+    titulo: "Exámenes de Cambridge · Inglés",
+    descripcion: "Exámenes internacionales de inglés de Cambridge Assessment International Education: First Language English (2018) y English as a Second Language (2017).",
     deps: [],
     tags: ["formacion"],
-    columnas: [["Certificaciones", "FLE 2018 · ESL 2017"]],
+    columnas: [["Exámenes", "First Language English 2018 · English as a Second Language 2017"]],
   },
   ...["unsj_computos", "infocontrol", "wes"].map((id): Nodo => {
     const e = exp(id);
@@ -126,11 +126,11 @@ const nodos: Nodo[] = [
     id: "stg_ingles",
     tipo: "model",
     capa: 1,
-    titulo: "Inglés",
-    descripcion: "Inglés de nivel nativo certificado por Cambridge: documentación, cursos y equipos en inglés.",
+    titulo: "Inglés avanzado",
+    descripcion: "Inglés avanzado para leer documentación técnica, hacer cursos y trabajar con equipos en inglés.",
     deps: ["cambridge.ingles"],
     tags: ["formacion"],
-    columnas: [["Nivel", "First Language English"]],
+    columnas: [["Nivel", "Avanzado"]],
   },
   // ── Intermedios ─────────────────────────────────────
   {
@@ -175,15 +175,14 @@ const nodos: Nodo[] = [
     columnas: [["Período", periodo(exp("datyo").desde, exp("datyo").hasta)], ["Stack", exp("datyo").tags.join(", ")]],
   },
   {
-    id: "fct_eda_transporte",
+    id: "fct_tesis_sube",
     tipo: "model",
     capa: 3,
-    titulo: proj("eda_transporte").titulo,
-    descripcion: proj("eda_transporte").descripcion,
-    deps: ["stg_python"],
-    tags: ["datos"],
-    columnas: [["Año", String(proj("eda_transporte").anio)], ["Stack", proj("eda_transporte").stack.join(", ")]],
-    links: linksProj("eda_transporte"),
+    titulo: proj("tesis_sube").titulo,
+    descripcion: proj("tesis_sube").descripcion,
+    deps: ["stg_python", "stg_sql"],
+    tags: ["datos", "tesis"],
+    columnas: [["Año", String(proj("tesis_sube").anio)], ["Estado", proj("tesis_sube").estado], ["Stack", proj("tesis_sube").stack.join(", ")]],
   },
   {
     id: "fct_espacioamine",
@@ -226,7 +225,7 @@ const nodos: Nodo[] = [
     descripcion: `${perfil.rol}. ${perfil.ubicacion}.`,
     deps: ["stg_ingles", "stg_soporte", "stg_qa"],
     tags: ["perfil"],
-    columnas: [["Ubicación", perfil.ubicacion], ["Email", perfil.email]],
+    columnas: [["Ubicación", perfil.ubicacion], ["Disponibilidad", perfil.disponibilidad], ["Email", perfil.email]],
     links: [["LinkedIn", perfil.linkedin], ["GitHub", perfil.github]],
   },
   // ── Exposure ────────────────────────────────────────
@@ -236,10 +235,20 @@ const nodos: Nodo[] = [
     capa: 4,
     titulo: "Este portfolio",
     descripcion: "Lo que consume todo lo anterior. Cuatro vistas del mismo contenido: clásica, dashboard, este linaje y una terminal SQL.",
-    deps: ["fct_datyo", "fct_eda_transporte", "fct_espacioamine", "fct_experimentos_amine", "fct_tienda_online", "dim_perfil"],
+    deps: ["fct_datyo", "fct_tesis_sube", "fct_espacioamine", "fct_experimentos_amine", "fct_tienda_online", "dim_perfil"],
     tags: ["perfil"],
     columnas: [["Owner", perfil.nombre], ["Tipo", "application"]],
     links: [["Contacto", `mailto:${perfil.email}`]],
+  },
+  {
+    id: "charla_uma_2026",
+    tipo: "exposure",
+    capa: 4,
+    titulo: "Charla en el I Encuentro Conjunto SBM-UMA",
+    descripcion: charlas[0].titulo,
+    deps: ["fct_tesis_sube"],
+    tags: ["datos", "tesis"],
+    columnas: [["Evento", charlas[0].evento], ["Lugar", charlas[0].lugar], ["Fecha", charlas[0].fecha], ["Coautor", charlas[0].coautor], ["Tipo", "analysis"]],
   },
 ];
 
@@ -253,7 +262,8 @@ const ORDEN = [
   "pasantias.infocontrol", "unsj.sistemas", "pasantias.wes", "pasantias.unsj_computos", "cambridge.ingles",
   "stg_bi", "stg_sql", "stg_python", "stg_web", "stg_qa", "stg_soporte", "stg_ingles",
   "int_modelado_datos", "int_backend", "int_frontend_interactivo",
-  "fct_datyo", "fct_eda_transporte", "fct_tienda_online", "fct_experimentos_amine", "fct_espacioamine", "dim_perfil",
+  "fct_tesis_sube", "fct_datyo", "fct_tienda_online", "fct_experimentos_amine", "fct_espacioamine", "dim_perfil",
+  "charla_uma_2026", "portfolio",
 ];
 const porCapa = new Map<number, Nodo[]>();
 [...nodos]
@@ -772,7 +782,7 @@ const presets = ["+fct_datyo", "fct_experimentos_amine", "+fct_tienda_online", "
       return `<span class="k">sources</span>:\n  - name: ${esc(src)}\n    tables:\n      - name: ${esc(tabla)}`;
     }
     if (n.tipo === "exposure") {
-      return `<span class="k">exposures</span>:\n  - name: ${esc(n.id)}\n    type: application\n    depends_on:\n${n.deps.map((d) => `      - ref(<span class="s">'${esc(d)}'</span>)`).join("\n")}`;
+      return `<span class="k">exposures</span>:\n  - name: ${esc(n.id)}\n    type: ${esc(n.columnas.find(([k]) => k === "Tipo")?.[1] ?? "application")}\n    depends_on:\n${n.deps.map((d) => `      - ref(<span class="s">'${esc(d)}'</span>)`).join("\n")}`;
     }
     const refs = n.deps.map((d) => {
       const s = byId.get(d)!;
