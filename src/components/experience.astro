@@ -1,42 +1,9 @@
 ---
-interface Job {
-  company: string;
-  role: string;
-  date: string;
-  description: string;
-  tags: string[];
-}
+import { experiencia, periodo } from "@/data/perfil";
 
-const jobs: Job[] = [
-  {
-    company: "Datyo",
-    role: "Analista de datos",
-    date: "Sep 2026 — actualidad",
-    description: "Consultora de datos. Mantengo el warehouse en SQL Server de la cuenta principal, migro las transformaciones de procedimientos almacenados a dbt con tests y linaje, integro la API de un sistema de RR.HH. y armo los tableros de productividad en Power BI.",
-    tags: ["dbt", "SQL Server", "Power BI", "Python"],
-  },
-  {
-    company: "Freelance",
-    role: "Desarrollador web",
-    date: "Dic 2025 — actualidad",
-    description: "Sitio de espacioamine.com con blog y panel de administración, tres experimentos de diseño interactivos sobre el mismo contenido y una tienda online multitenant.",
-    tags: ["Astro", "Tailwind", "GSAP", "Three.js", "Node.js"],
-  },
-  {
-    company: "WES",
-    role: "Pasantía en calidad de software",
-    date: "Jun 2025 — Jul 2025",
-    description: "Pruebas funcionales de caja negra, diseño de casos de prueba y validación de APIs con Postman.",
-    tags: ["QA", "Postman"],
-  },
-  {
-    company: "Infocontrol",
-    role: "Pasantía de Business Intelligence",
-    date: "Ago 2024 — Oct 2024",
-    description: "Dashboards en Looker Studio, definición de KPIs, automatización de flujos de datos y documentación de procesos.",
-    tags: ["Looker Studio", "KPIs"],
-  },
-];
+const jobs = experiencia
+  .filter((e) => e.destacada)
+  .map((e) => ({ company: e.empresa, role: e.rol, date: periodo(e.desde, e.hasta), description: e.descripcion, tags: e.tags }));
 ---
 
 <section

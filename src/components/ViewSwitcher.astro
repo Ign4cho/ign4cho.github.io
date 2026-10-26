@@ -1,0 +1,143 @@
+---
+// Selector de vista: mismo contenido, distinto diseño. Fijo arriba a la derecha
+// en mobile y abajo a la derecha en desktop (arriba está el nav de la clásica).
+import { vistas } from "@/data/perfil";
+
+interface Props {
+  actual: string;
+}
+
+const { actual } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const nombreActual = vistas.find((v) => v.id === actual)?.nombre ?? "";
+---
+
+<details class="vs" data-view-switcher>
+  <summary aria-label={`Cambiar de vista. Vista actual: ${nombreActual}`}>
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+      <path d="M3 3h8v8H3V3Zm2 2v4h4V5H5Zm8-2h8v8h-8V3Zm2 2v4h4V5h-4ZM3 13h8v8H3v-8Zm2 2v4h4v-4H5Zm8-2h8v8h-8v-8Zm2 2v4h4v-4h-4Z"></path>
+    </svg>
+    <span>Vista: {nombreActual}</span>
+  </summary>
+  <ul>
+    {
+      vistas.map((v, i) => (
+        <li>
+          <a href={`${base}${v.href}`} aria-current={v.id === actual ? "page" : undefined}>
+            <span class="vs-n">{String(i + 1).padStart(2, "0")}</span>
+            <span>
+              <strong>{v.nombre}</strong>
+              <small>{v.detalle}</small>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</details>
+
+<style>
+  .vs {
+    position: fixed;
+    z-index: 1000;
+    right: 16px;
+    top: 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+    color: #f4f4f2;
+  }
+  @media (min-width: 768px) {
+    .vs {
+      top: auto;
+      bottom: 24px;
+      right: 24px;
+    }
+  }
+  .vs summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: #161616;
+    border: 1px solid #ffffff26;
+    box-shadow: 0 6px 20px #0000003d;
+    cursor: pointer;
+    user-select: none;
+  }
+  .vs summary::-webkit-details-marker {
+    display: none;
+  }
+  .vs summary:focus-visible,
+  .vs a:focus-visible {
+    outline: 2px solid #a476ff;
+    outline-offset: 2px;
+  }
+  .vs ul {
+    list-style: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: min(300px, calc(100vw - 32px));
+    padding: 6px;
+    margin: 0;
+    border-radius: 16px;
+    background: #161616;
+    border: 1px solid #ffffff26;
+    box-shadow: 0 12px 32px #00000059;
+  }
+  @media (min-width: 768px) {
+    .vs ul {
+      top: auto;
+      bottom: calc(100% + 8px);
+    }
+  }
+  .vs a {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .vs a:hover {
+    background: #ffffff12;
+  }
+  .vs a[aria-current="page"] {
+    background: #ffffff1c;
+  }
+  .vs-n {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 12px;
+    color: #a476ff;
+  }
+  .vs strong {
+    display: block;
+    font-weight: 600;
+  }
+  .vs small {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #f4f4f2a6;
+  }
+</style>
+
+<script>
+  // Cerrar al hacer clic afuera o con Escape.
+  const vs = document.querySelector<HTMLDetailsElement>("[data-view-switcher]");
+  if (vs) {
+    document.addEventListener("click", (e) => {
+      if (vs.open && !vs.contains(e.target as Node)) vs.open = false;
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && vs.open) {
+        vs.open = false;
+        vs.querySelector("summary")?.focus();
+      }
+    });
+  }
+</script>

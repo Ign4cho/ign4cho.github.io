@@ -1,48 +1,19 @@
 ---
+import { proyectos } from "@/data/perfil";
 const base = import.meta.env.BASE_URL;
 
-interface Project {
-  title: string;
-  image: string;
-  link: string | null; // null: repositorio privado
-  preview: string | null;
-  status: string;
-  description: string;
-  extraLinks?: { label: string; href: string }[];
-  comingSoon?: boolean;
-}
-
-const projects: Project[] = [
-  {
-    title: "Tienda online con tracking avanzado de Meta",
-    image: `${base}demo-eshop.png`,
-    link: null,
-    preview: "https://storefront-production-d033.up.railway.app/",
-    status: "Publicado",
-    description: "Plataforma e-commerce SaaS multitenant para gestionar tiendas online de punta a punta: catálogo, carrito y checkout con MercadoPago, panel de administración y tracking de Meta (Pixel + Conversions API) para optimizar campañas. Backend Fastify + PostgreSQL, storefront Astro y deploy en Railway.",
-  },
-  {
-    title: "Espacioamine.com",
-    image: `${base}demo-agency.png`,
-    link: "https://github.com/Ign4cho/amine-web",
-    preview: "https://espacioamine.com",
-    status: "Publicado",
-    description: "Sitio institucional para una agencia de marketing digital: servicios, equipo, aliados y un blog con panel de administración propio. Astro, Tailwind y Alpine.js.",
-  },
-  {
-    title: "Amine: tres experimentos de diseño",
-    image: `${base}demo-amine-experimentos.jpg`,
-    link: "https://github.com/Ign4cho/amine-web/tree/preview-octubre/experimentos",
-    preview: "https://fold.espacioamine.com",
-    status: "Publicado",
-    description: "El mismo contenido de espacioamine.com contado de tres formas: un fanzine que se despliega en 3D con el scroll (Three.js), una mesa de trabajo con objetos arrastrables (GSAP) y una revista editorial.",
-    extraLinks: [
-      { label: "Pliego 3D", href: "https://fold.espacioamine.com" },
-      { label: "Mesa", href: "https://mesa.espacioamine.com" },
-      { label: "Editorial", href: "https://editorial.espacioamine.com" },
-    ],
-  },
-];
+const projects = proyectos
+  .filter((p) => p.destacado)
+  .map((p) => ({
+    title: p.titulo,
+    image: `${base}${p.imagen}`,
+    link: p.codigo,
+    preview: p.sitio,
+    status: p.estado,
+    description: p.descripcion,
+    extraLinks: p.extra,
+    comingSoon: false,
+  }));
 ---
 
 <section

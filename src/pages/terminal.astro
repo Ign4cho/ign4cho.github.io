@@ -1,0 +1,522 @@
+---
+// Vista «Terminal SQL»: el portfolio como base de datos. Un mini motor SQL en el
+// navegador (SELECT, WHERE, ORDER BY, LIMIT, GROUP BY con COUNT) más comandos
+// estilo psql. Las tablas salen de src/data/perfil.ts.
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import { perfil, experiencia, proyectos, habilidades, estudios, vistas, meses, AREAS } from "@/data/perfil";
+
+const base = import.meta.env.BASE_URL;
+const site = Astro.site!.href.replace(/\/$/, "");
+
+const tablas = {
+  experiencia: experiencia.map((e) => ({
+    empresa: e.empresa,
+    rol: e.rol,
+    area: AREAS[e.area].toLowerCase(),
+    desde: e.desde,
+    hasta: e.hasta,
+    meses: meses(e.desde, e.hasta),
+    stack: e.tags.join(", "),
+  })),
+  proyectos: proyectos.map((p) => ({
+    nombre: p.titulo,
+    area: AREAS[p.area].toLowerCase(),
+    anio: p.anio,
+    estado: p.estado,
+    stack: p.stack.join(", "),
+    sitio: p.sitio,
+    codigo: p.codigo,
+  })),
+  habilidades: habilidades.map((h) => ({ nombre: h.nombre, area: h.area === "general" ? "general" : AREAS[h.area].toLowerCase() })),
+  estudios: estudios.map((e) => ({ institucion: e.institucion, titulo: e.titulo, desde: e.desde })),
+  contacto: [
+    { medio: "email", valor: `mailto:${perfil.email}` },
+    { medio: "linkedin", valor: perfil.linkedin },
+    { medio: "github", valor: perfil.github },
+    { medio: "ubicacion", valor: perfil.ubicacion },
+  ],
+  vistas: vistas.map((v) => ({ nombre: v.nombre, detalle: v.detalle, url: `${site}${base}${v.href}` })),
+};
+
+const sugerencias = [
+  "\\dt",
+  "SELECT * FROM experiencia;",
+  "SELECT nombre, stack, sitio FROM proyectos WHERE area = 'web';",
+  "SELECT area, COUNT(*) FROM habilidades GROUP BY area;",
+  "SELECT empresa, meses FROM experiencia ORDER BY meses DESC LIMIT 3;",
+  "SELECT * FROM proyectos WHERE stack LIKE '%dbt%' OR area = 'datos';",
+  "cv",
+  "contacto",
+];
+---
+
+<ViewLayout
+  title="nacho=# · terminal"
+  description="El portfolio de Ignacio Colomé como base de datos: consultalo con SQL desde una terminal en el navegador."
+  vista="terminal"
+>
+  <div class="tm">
+    <header class="tm-bar">
+      <span class="tm-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <p>psql · portfolio @ ign4cho.github.io</p>
+    </header>
+
+    <main class="tm-screen" data-screen>
+      <div class="tm-out" data-out aria-live="polite"></div>
+      <form class="tm-line" data-form autocomplete="off">
+        <label for="tm-in" class="tm-prompt">nacho=#</label>
+        <input id="tm-in" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="send" aria-describedby="tm-hint" />
+      </form>
+    </main>
+
+    <nav class="tm-sug" aria-label="Consultas de ejemplo">
+      <p id="tm-hint">Probá:</p>
+      <div>
+        {sugerencias.map((s) => <button type="button" data-run={s}>{s}</button>)}
+      </div>
+    </nav>
+  </div>
+
+  <script type="application/json" id="tm-data" set:html={JSON.stringify({ tablas, perfil })} />
+</ViewLayout>
+
+<style is:global>
+  .tm {
+    --bg: #0c0f14;
+    --panel: #121720;
+    --ink: #d8dee9;
+    --dim: #8a93a6;
+    --prompt: #7ee787;
+    --kw: #79c0ff;
+    --err: #ff7b72;
+    --warn: #e3b341;
+    --line: #232a36;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.55 ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  }
+  body:has(.tm) {
+    background: #0c0f14;
+  }
+  .tm button,
+  .tm input {
+    font: inherit;
+    color: inherit;
+  }
+  .tm :focus-visible {
+    outline: 2px solid var(--kw);
+    outline-offset: 2px;
+  }
+  .tm-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    color: var(--dim);
+    font-size: 12px;
+  }
+  @media (max-width: 767px) {
+    .tm-bar {
+      padding-right: 180px;
+      min-height: 76px;
+    }
+  }
+  .tm-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .tm-dots i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #3a4150;
+  }
+  .tm-screen {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    cursor: text;
+  }
+  .tm-out > * {
+    margin: 0;
+  }
+  .tm-out pre {
+    font: inherit;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 0 0 12px;
+  }
+  .tm-out .tm-echo {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+  }
+  .tm-out .tm-echo b {
+    color: var(--prompt);
+    font-weight: 400;
+  }
+  .tm-out .tm-text {
+    white-space: pre-wrap;
+    margin: 0 0 12px;
+  }
+  .tm-out .k {
+    color: var(--kw);
+  }
+  .tm-out .d {
+    color: var(--dim);
+  }
+  .tm-out .e {
+    color: var(--err);
+  }
+  .tm-out .w {
+    color: var(--warn);
+  }
+  .tm-out a {
+    color: var(--kw);
+  }
+  .tm-out button.tm-cmd {
+    border: 0;
+    background: none;
+    padding: 0;
+    color: var(--kw);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .tm-line {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .tm-prompt {
+    color: var(--prompt);
+    flex: none;
+  }
+  .tm-line input {
+    flex: 1;
+    min-width: 0;
+    min-height: 32px;
+    background: transparent;
+    border: 0;
+    outline: none;
+    caret-color: var(--prompt);
+  }
+  .tm-sug {
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    padding: 10px 16px 12px;
+  }
+  @media (min-width: 768px) {
+    .tm-sug {
+      padding-right: 260px; /* deja lugar al selector de vista */
+    }
+  }
+  .tm-sug p {
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .tm-sug div {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .tm-sug button {
+    flex: none;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .tm-sug button:hover {
+    border-color: var(--kw);
+  }
+</style>
+
+<script>
+  type Valor = string | number | null;
+  type Fila = Record<string, Valor>;
+  const { tablas, perfil } = JSON.parse(document.getElementById("tm-data")!.textContent!) as {
+    tablas: Record<string, Fila[]>;
+    perfil: { nombre: string; rol: string; ubicacion: string; email: string };
+  };
+
+  const out = document.querySelector<HTMLElement>("[data-out]")!;
+  const input = document.querySelector<HTMLInputElement>("#tm-in")!;
+  const screen = document.querySelector<HTMLElement>("[data-screen]")!;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+  // ── Salida ─────────────────────────────────────────────
+  function print(html: string, cls = "tm-text") {
+    const el = document.createElement(cls === "pre" ? "pre" : "p");
+    if (cls !== "pre") el.className = cls;
+    el.innerHTML = html;
+    out.append(el);
+    el.querySelectorAll<HTMLButtonElement>("[data-cmd]").forEach((b) => b.addEventListener("click", () => run(b.dataset.cmd!)));
+    screen.scrollTop = screen.scrollHeight;
+  }
+  const cmd = (c: string) => `<button type="button" class="tm-cmd" data-cmd="${esc(c)}">${esc(c)}</button>`;
+
+  /** Tabla con el formato de psql; las URLs se vuelven links. */
+  function tabla(filas: Fila[], cols: string[]) {
+    const txt = (v: Valor) => (v === null ? "" : String(v));
+    const w = cols.map((c) => Math.max(c.length, ...filas.map((f) => txt(f[c]).length)));
+    const celda = (v: Valor, i: number) => {
+      const s = txt(v);
+      const pad = " ".repeat(w[i] - s.length);
+      const shown = /^(https?:|mailto:)/.test(s) ? `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(s)}</a>` : esc(s);
+      return typeof v === "number" ? pad + shown : shown + pad;
+    };
+    const head = " " + cols.map((c, i) => c.padEnd(w[i])).join(" | ");
+    const sep = w.map((n) => "-".repeat(n + 2)).join("+").slice(1);
+    const rows = filas.map((f) => " " + cols.map((c, i) => celda(f[c], i)).join(" | "));
+    const n = filas.length;
+    print([esc(head), sep, ...rows, `<span class="d">(${n} ${n === 1 ? "fila" : "filas"})</span>`].join("\n"), "pre");
+  }
+
+  function error(msg: string, hint?: string) {
+    print(`<span class="e">ERROR:</span>  ${esc(msg)}${hint ? `\n<span class="w">HINT:</span>  ${hint}` : ""}`);
+  }
+
+  // ── Mini motor SQL ─────────────────────────────────────
+  // SELECT cols | * | COUNT(*) FROM t [WHERE c op v [AND|OR ...]] [GROUP BY c] [ORDER BY c [ASC|DESC]] [LIMIT n]
+  function sql(q: string) {
+    const m = q
+      .replace(/;\s*$/, "")
+      .match(/^select\s+(.+?)\s+from\s+(\w+)(?:\s+where\s+(.+?))?(?:\s+group\s+by\s+(\w+))?(?:\s+order\s+by\s+(\w+|count\(\*\))(?:\s+(asc|desc))?)?(?:\s+limit\s+(\d+))?$/is);
+    if (!m) return error("error de sintaxis", `Soporto SELECT … FROM … WHERE … GROUP BY … ORDER BY … LIMIT. Ejemplo: ${cmd("SELECT * FROM proyectos;")}`);
+    const [, selRaw, tRaw, whereRaw, groupBy, orderBy, dir, limit] = m;
+    const t = tRaw.toLowerCase();
+    const datos = tablas[t];
+    if (!datos) return error(`no existe la relación «${t}»`, `Mirá las tablas con ${cmd("\\dt")}.`);
+    const columnas = Object.keys(datos[0]);
+    const existe = (c: string) => {
+      if (columnas.includes(c)) return true;
+      error(`no existe la columna «${c}» en «${t}»`, `Columnas: ${columnas.join(", ")}.`);
+      return false;
+    };
+
+    let filas = datos;
+    if (whereRaw) {
+      const pred = where(whereRaw, columnas, t);
+      if (!pred) return;
+      filas = filas.filter(pred);
+    }
+
+    const sel = selRaw.split(",").map((s) => s.trim().toLowerCase());
+    if (groupBy) {
+      const g = groupBy.toLowerCase();
+      if (!existe(g)) return;
+      const grupos = new Map<Valor, number>();
+      filas.forEach((f) => grupos.set(f[g], (grupos.get(f[g]) ?? 0) + 1));
+      let res: Fila[] = [...grupos.entries()].map(([k, n]) => ({ [g]: k, count: n }));
+      const ord = (orderBy ?? "").toLowerCase();
+      if (ord) {
+        const k = ord === "count(*)" ? "count" : ord;
+        res.sort((a, b) => cmp(a[k], b[k]) * (dir?.toLowerCase() === "desc" ? -1 : 1));
+      }
+      if (limit) res = res.slice(0, Number(limit));
+      return tabla(res, [g, "count"]);
+    }
+    if (sel.length === 1 && sel[0] === "count(*)") return tabla([{ count: filas.length }], ["count"]);
+
+    const cols = sel[0] === "*" ? columnas : sel;
+    for (const c of cols) if (!existe(c)) return;
+    if (orderBy) {
+      const o = orderBy.toLowerCase();
+      if (!existe(o)) return;
+      filas = [...filas].sort((a, b) => cmp(a[o], b[o]) * (dir?.toLowerCase() === "desc" ? -1 : 1));
+    }
+    if (limit) filas = filas.slice(0, Number(limit));
+    tabla(filas, cols);
+  }
+
+  function cmp(a: Valor, b: Valor) {
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), "es");
+  }
+
+  function where(raw: string, columnas: string[], t: string): ((f: Fila) => boolean) | null {
+    // Separa por OR y después por AND (AND tiene prioridad, como en SQL).
+    const ors = raw.split(/\s+or\s+/i).map((o) => o.split(/\s+and\s+/i));
+    const preds: ((f: Fila) => boolean)[][] = [];
+    for (const ands of ors) {
+      const grupo: ((f: Fila) => boolean)[] = [];
+      for (const c of ands) {
+        const m = c.trim().match(/^(\w+)\s*(=|!=|<>|>=|<=|>|<|not\s+like|like|ilike|is\s+not\s+null|is\s+null)\s*(?:'(.*)'|(-?\d+(?:\.\d+)?))?$/i);
+        if (!m) {
+          error(`no entiendo la condición «${c.trim()}»`, `Usá columna = 'valor', columna LIKE '%texto%' o columna IS NULL.`);
+          return null;
+        }
+        const [, colRaw, opRaw, str, num] = m;
+        const col = colRaw.toLowerCase();
+        if (!columnas.includes(col)) {
+          error(`no existe la columna «${col}» en «${t}»`, `Columnas: ${columnas.join(", ")}.`);
+          return null;
+        }
+        const op = opRaw.toLowerCase().replace(/\s+/g, " ");
+        const val: Valor = num !== undefined ? Number(num) : (str ?? null);
+        const norm = (v: Valor) => (typeof v === "string" ? v.toLocaleLowerCase("es") : v);
+        const like = (v: Valor) => {
+          const re = new RegExp(`^${String(val).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".")}$`, "is");
+          return v !== null && re.test(String(v));
+        };
+        grupo.push((f) => {
+          const v = f[col];
+          switch (op) {
+            case "=": return norm(v) === norm(val);
+            case "!=":
+            case "<>": return norm(v) !== norm(val);
+            case ">": return v !== null && val !== null && cmp(v, val) > 0;
+            case "<": return v !== null && val !== null && cmp(v, val) < 0;
+            case ">=": return v !== null && val !== null && cmp(v, val) >= 0;
+            case "<=": return v !== null && val !== null && cmp(v, val) <= 0;
+            case "like":
+            case "ilike": return like(v);
+            case "not like": return !like(v);
+            case "is null": return v === null;
+            case "is not null": return v !== null;
+          }
+          return false;
+        });
+      }
+      preds.push(grupo);
+    }
+    return (f) => preds.some((g) => g.every((p) => p(f)));
+  }
+
+  // ── Comandos ───────────────────────────────────────────
+  function ayuda() {
+    print(
+      [
+        `<span class="k">Comandos</span>`,
+        `  ${cmd("\\dt")}            lista las tablas`,
+        `  ${cmd("\\d proyectos")}   columnas de una tabla`,
+        `  ${cmd("cv")}              resumen del perfil`,
+        `  ${cmd("contacto")}        cómo escribirme`,
+        `  ${cmd("vistas")}          otras formas de ver este portfolio`,
+        `  ${cmd("clear")}           limpia la pantalla (o Ctrl+L)`,
+        ``,
+        `<span class="k">SQL</span>  SELECT, WHERE (=, LIKE, IS NULL, AND, OR), GROUP BY con COUNT(*), ORDER BY, LIMIT.`,
+        `     Las comparaciones de texto no distinguen mayúsculas. ↑ ↓ recorre el historial, Tab completa.`,
+      ].join("\n"),
+    );
+  }
+
+  const comandos: Record<string, (arg: string) => void> = {
+    help: ayuda,
+    "\\?": ayuda,
+    "\\h": ayuda,
+    "\\dt": () =>
+      tabla(
+        Object.entries(tablas).map(([n, f]) => ({ esquema: "public", nombre: n, filas: f.length })),
+        ["esquema", "nombre", "filas"],
+      ),
+    "\\d": (arg) => {
+      const t = arg.trim().toLowerCase();
+      if (!t) return comandos["\\dt"]("");
+      const f = tablas[t];
+      if (!f) return error(`no existe la relación «${t}»`);
+      tabla(
+        Object.keys(f[0]).map((c) => {
+          const vals = f.map((r) => r[c]);
+          return { columna: c, tipo: vals.some((v) => typeof v === "number") ? "integer" : "text", nulos: vals.some((v) => v === null) ? "sí" : "no" };
+        }),
+        ["columna", "tipo", "nulos"],
+      );
+    },
+    cv: () => {
+      const actual = tablas.experiencia.filter((e) => e.hasta === null);
+      print(
+        [
+          `<span class="k">${esc(perfil.nombre)}</span> · ${esc(perfil.rol)}`,
+          `<span class="d">${esc(perfil.ubicacion)}</span>`,
+          ``,
+          `Hoy:`,
+          ...actual.map((e) => `  • ${esc(String(e.rol))} en ${esc(String(e.empresa))} <span class="d">(${esc(String(e.stack))})</span>`),
+          ``,
+          `Más detalle: ${cmd("SELECT * FROM experiencia;")}  ${cmd("SELECT * FROM proyectos;")}`,
+        ].join("\n"),
+      );
+    },
+    contacto: () => tabla(tablas.contacto, ["medio", "valor"]),
+    vistas: () => tabla(tablas.vistas, ["nombre", "detalle", "url"]),
+    whoami: () => tabla([{ current_user: "invitado" }], ["current_user"]),
+    clear: () => (out.innerHTML = ""),
+    "\\q": () => print(`Para salir usá el selector de vista. Mientras tanto: ${cmd("contacto")}`),
+    exit: () => comandos["\\q"](""),
+  };
+
+  // ── Entrada ────────────────────────────────────────────
+  const historial: string[] = [];
+  let hi = 0;
+
+  function run(linea: string) {
+    const q = linea.trim();
+    print(`<b>nacho=#</b> ${esc(q)}`, "tm-echo");
+    if (!q) return;
+    historial.push(q);
+    hi = historial.length;
+    const [c, ...rest] = q.split(/\s+/);
+    const fn = comandos[c.toLowerCase()];
+    if (fn) fn(rest.join(" "));
+    else if (/^select\b/i.test(q)) sql(q);
+    else if (/^(insert|update|delete|drop|alter|create|truncate)\b/i.test(q)) error("permiso denegado: el portfolio es de solo lectura", `Si querés cambiar algo, ${cmd("contacto")}.`);
+    else error(`comando desconocido «${c}»`, `Escribí ${cmd("help")}.`);
+    input.focus({ preventScroll: true });
+  }
+
+  const PALABRAS = ["SELECT", "FROM", "WHERE", "GROUP BY", "ORDER BY", "LIMIT", "LIKE", "AND", "OR", "DESC", "COUNT(*)", ...Object.keys(tablas), ...new Set(Object.values(tablas).flatMap((f) => Object.keys(f[0])))];
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" && historial.length) {
+      e.preventDefault();
+      hi = Math.max(0, hi - 1);
+      input.value = historial[hi];
+    } else if (e.key === "ArrowDown" && historial.length) {
+      e.preventDefault();
+      hi = Math.min(historial.length, hi + 1);
+      input.value = historial[hi] ?? "";
+    } else if (e.key === "Tab") {
+      const m = input.value.match(/(\S+)$/);
+      if (!m) return;
+      const opciones = PALABRAS.filter((p) => p.toLowerCase().startsWith(m[1].toLowerCase()));
+      if (opciones.length) {
+        e.preventDefault();
+        input.value = input.value.slice(0, -m[1].length) + opciones[0] + " ";
+      }
+    } else if (e.key === "l" && e.ctrlKey) {
+      e.preventDefault();
+      out.innerHTML = "";
+    }
+  });
+  document.querySelector<HTMLFormElement>("[data-form]")!.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = input.value;
+    input.value = "";
+    run(v);
+  });
+  document.querySelectorAll<HTMLButtonElement>("[data-run]").forEach((b) => b.addEventListener("click", () => run(b.dataset.run!)));
+  screen.addEventListener("click", () => {
+    if (!getSelection()?.toString()) input.focus({ preventScroll: true });
+  });
+
+  print(
+    [
+      `psql (16.4) · conectado a <span class="k">portfolio</span> como <span class="k">invitado</span>`,
+      `<span class="d">Este portfolio es una base de datos. Consultala con SQL o tocá los ejemplos de abajo.</span>`,
+      `Escribí ${cmd("help")} para ver los comandos, o arrancá por ${cmd("\\dt")}.`,
+    ].join("\n"),
+  );
+  if (matchMedia("(pointer: fine)").matches) input.focus({ preventScroll: true });
+</script>

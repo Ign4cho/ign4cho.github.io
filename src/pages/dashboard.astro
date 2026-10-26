@@ -1,0 +1,855 @@
+---
+// Vista «Dashboard»: el portfolio como informe de Power BI. Mismo contenido que
+// la clásica (src/data/perfil.ts) más los repos públicos de GitHub al momento del build.
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import { perfil, experiencia, proyectos, estudios, AREAS, HOY, meses } from "@/data/perfil";
+
+const base = import.meta.env.BASE_URL;
+
+let repos: number | null = null;
+try {
+  const res = await fetch("https://api.github.com/users/Ign4cho", { headers: { "User-Agent": "portfolio-build" } });
+  if (res.ok) repos = (await res.json()).public_repos ?? null;
+} catch {
+  repos = null; // sin red en el build: la tarjeta muestra «—»
+}
+
+const data = {
+  hoy: HOY,
+  inicio: perfil.inicio,
+  repos,
+  areas: AREAS,
+  experiencia: experiencia.map((e) => ({ ...e, meses: meses(e.desde, e.hasta) })),
+  proyectos: proyectos.map((p) => ({ ...p, imagen: p.imagen ? `${base}${p.imagen}` : null })),
+};
+---
+
+<ViewLayout
+  title="Ignacio Colomé · Informe de perfil"
+  description="El portfolio de Ignacio Colomé como un informe de Power BI: trayectoria, tecnologías y proyectos con filtros cruzados."
+  vista="dashboard"
+>
+  <div class="db">
+    <header class="db-top">
+      <div>
+        <p class="db-kicker">Informe de perfil · Página <span data-page-n>1</span> de 3</p>
+        <h1>{perfil.nombre}</h1>
+        <p class="db-sub">{perfil.rol} · {perfil.ubicacion}</p>
+      </div>
+      <p class="db-meta">
+        Actualizado {HOY}<br />
+        Fuente: <code>perfil.ts</code> + API de GitHub
+      </p>
+    </header>
+
+    <div class="db-filters" role="toolbar" aria-label="Filtros del informe">
+      <span class="db-filter-label">Área</span>
+      <div class="db-seg" data-area-filter>
+        <button type="button" data-area="todas" aria-pressed="true">Todas</button>
+        {
+          Object.entries(AREAS).map(([id, nombre]) => (
+            <button type="button" data-area={id} aria-pressed="false">
+              <i class={`sw sw-${id}`} aria-hidden="true" />
+              {nombre}
+            </button>
+          ))
+        }
+      </div>
+      <button type="button" class="db-chip" data-tech-chip hidden>
+        Tecnología: <strong data-tech-name></strong>
+        <span aria-hidden="true">✕</span>
+        <span class="sr-only">Quitar filtro</span>
+      </button>
+    </div>
+
+    <main>
+      <!-- Página 1: Resumen -->
+      <section class="db-page" data-page="resumen" aria-label="Resumen">
+        <div class="db-kpis" data-kpis></div>
+        <div class="db-row">
+          <article class="vis vis-wide">
+            <header>
+              <h2>Trayectoria</h2>
+              <button type="button" class="vis-toggle" data-toggle="gantt">Ver como tabla</button>
+            </header>
+            <div class="vis-body" data-vis="gantt"></div>
+            <div class="db-legend" data-legend></div>
+          </article>
+          <article class="vis">
+            <header>
+              <h2>Tecnologías más usadas</h2>
+              <button type="button" class="vis-toggle" data-toggle="techs">Ver como tabla</button>
+            </header>
+            <p class="vis-note">Apariciones en experiencia y proyectos. Clic en una barra para filtrar.</p>
+            <div class="vis-body" data-vis="techs"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Página 2: Proyectos -->
+      <section class="db-page" data-page="proyectos" aria-label="Proyectos" hidden>
+        <div class="db-row db-row-proj">
+          <article class="vis vis-wide">
+            <header><h2>Proyectos</h2><span class="vis-count" data-proj-count></span></header>
+            <div class="vis-body db-table-wrap" data-vis="proyectos"></div>
+          </article>
+          <article class="vis" data-proj-detail aria-live="polite"></article>
+        </div>
+      </section>
+
+      <!-- Página 3: Perfil -->
+      <section class="db-page" data-page="perfil" aria-label="Perfil" hidden>
+        <div class="db-row">
+          <article class="vis vis-wide db-bio">
+            <img src={`${base}foto_perfil.jpg`} alt={perfil.nombre} width="160" height="160" loading="lazy" />
+            <div>
+              <h2>{perfil.nombre}</h2>
+              <p>
+                Analista de datos en Datyo. Modelo warehouses con dbt y SQL Server, integro APIs y armo tableros en
+                Power BI. En paralelo diseño y desarrollo sitios web con foco en la interacción.
+              </p>
+              <ul class="db-links">
+                <li><a href={`mailto:${perfil.email}`}>{perfil.email}</a></li>
+                <li><a href={perfil.linkedin} target="_blank" rel="noopener">LinkedIn</a></li>
+                <li><a href={perfil.github} target="_blank" rel="noopener">GitHub</a></li>
+              </ul>
+            </div>
+          </article>
+          <article class="vis">
+            <header><h2>Estudios</h2></header>
+            <table class="db-table">
+              <thead><tr><th>Título</th><th>Desde</th></tr></thead>
+              <tbody>
+                {
+                  estudios.map((e) => (
+                    <tr>
+                      <td>
+                        {e.titulo}
+                        <small>{e.institucion}</small>
+                      </td>
+                      <td class="num">{e.desde}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <nav class="db-tabs" aria-label="Páginas del informe">
+      <button type="button" data-tab="resumen" aria-current="page">Resumen</button>
+      <button type="button" data-tab="proyectos">Proyectos</button>
+      <button type="button" data-tab="perfil">Perfil</button>
+    </nav>
+
+    <div class="db-tip" role="tooltip" data-tip hidden></div>
+    <noscript><p class="db-noscript">Esta vista necesita JavaScript. <a href={base}>Ver la vista clásica</a>.</p></noscript>
+  </div>
+
+  <script type="application/json" id="db-data" set:html={JSON.stringify(data)} />
+</ViewLayout>
+
+<style is:global>
+  .db {
+    color-scheme: light;
+    --canvas: #eaeae7;
+    --surface: #fcfcfb;
+    --border: #d9d8d3;
+    --ink: #1b1b19;
+    --ink-2: #52514e;
+    --ink-3: #75746f;
+    --grid: #e6e5e0;
+    --accent: #2a78d6;
+    --a-datos: #2a78d6;
+    --a-web: #eb6834;
+    --a-qa: #1baf7a;
+    --a-soporte: #8a8984;
+    --dim: 0.22;
+    min-height: 100vh;
+    padding-bottom: 72px;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .db {
+      color-scheme: dark;
+      --canvas: #111110;
+      --surface: #1a1a19;
+      --border: #2f2f2c;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --ink-3: #9a998f;
+      --grid: #2a2a27;
+      --accent: #3987e5;
+      --a-datos: #3987e5;
+      --a-web: #d95926;
+      --a-qa: #199e70;
+      --a-soporte: #77766f;
+    }
+  }
+  body:has(.db) {
+    background: var(--canvas, #eaeae7);
+  }
+  .db [hidden] {
+    display: none !important;
+  }
+  .db .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .db button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .db :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .db-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 20px 24px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .db-kicker,
+  .db-meta,
+  .db-sub {
+    color: var(--ink-2);
+    font-size: 12px;
+  }
+  .db-top h1 {
+    font-size: 26px;
+    font-weight: 600;
+    margin: 2px 0;
+  }
+  .db-meta {
+    text-align: right;
+  }
+  @media (max-width: 767px) {
+    .db-top {
+      padding-right: 180px;
+    }
+    .db-meta {
+      text-align: left;
+    }
+  }
+  .db-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 24px;
+  }
+  .db-filter-label {
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .db-seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .db-seg button,
+  .db-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+  }
+  .db-seg button[aria-pressed="true"] {
+    border-color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink);
+    font-weight: 600;
+  }
+  .db-chip {
+    border-style: dashed;
+  }
+  .sw {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .sw-datos { background: var(--a-datos); }
+  .sw-web { background: var(--a-web); }
+  .sw-qa { background: var(--a-qa); }
+  .sw-soporte { background: var(--a-soporte); }
+
+  .db main {
+    padding: 0 24px;
+  }
+  .db-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 900px) {
+    .db-kpis {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .kpi,
+  .vis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+  }
+  .kpi p {
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .kpi strong {
+    display: block;
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi small {
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .db-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 12px;
+  }
+  .db-row-proj {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  @media (max-width: 900px) {
+    .db-row,
+    .db-row-proj {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .vis header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .vis h2 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .vis-note,
+  .vis-count {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+  }
+  .vis-toggle {
+    border: 0;
+    background: none;
+    font-size: 12px !important;
+    color: var(--accent) !important;
+    padding: 6px 0;
+  }
+  .vis-body svg {
+    display: block;
+    width: 100%;
+    overflow: visible;
+  }
+  .vis-body text {
+    fill: var(--ink-2);
+    font-size: 12px;
+  }
+  .vis-body .t-strong {
+    fill: var(--ink);
+  }
+  .vis-body .grid line {
+    stroke: var(--grid);
+  }
+  .mark {
+    transition: opacity 0.2s;
+  }
+  .mark.is-dim {
+    opacity: var(--dim);
+  }
+  .hit {
+    fill: transparent;
+    cursor: pointer;
+  }
+  .db-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .db-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .db-table-wrap {
+    overflow-x: auto;
+  }
+  .db-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .db-table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--ink-2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px;
+  }
+  .db-table td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--grid);
+    vertical-align: top;
+  }
+  .db-table td small {
+    display: block;
+    color: var(--ink-3);
+    font-size: 12px;
+  }
+  .db-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .db-table tbody tr[data-row] {
+    cursor: pointer;
+  }
+  .db-table tbody tr[data-row]:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  .db-table tbody tr[aria-selected="true"] {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .db-table a {
+    color: var(--accent);
+  }
+  .db-area {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .db-detail img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    margin: 4px 0 12px;
+  }
+  .db-detail p {
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  .db-detail ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0;
+    padding: 0;
+  }
+  .db-detail li {
+    font-size: 12px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .db-detail a {
+    color: var(--accent);
+    margin-right: 14px;
+    display: inline-block;
+    padding: 6px 0;
+  }
+  .db-bio {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .db-bio img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+    filter: grayscale(1);
+  }
+  .db-bio h2 {
+    font-size: 20px !important;
+    margin-bottom: 6px;
+  }
+  .db-bio p {
+    color: var(--ink-2);
+    line-height: 1.55;
+    max-width: 60ch;
+  }
+  .db-links {
+    list-style: none;
+    padding: 0;
+    margin-top: 12px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .db-links a {
+    color: var(--accent);
+    display: inline-block;
+    padding: 6px 0;
+  }
+  @media (max-width: 600px) {
+    .db-bio {
+      flex-direction: column;
+    }
+  }
+  .db-tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    gap: 2px;
+    padding: 0 24px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 50;
+  }
+  .db-tabs button {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    background: none;
+    color: var(--ink-2);
+    border-top: 3px solid transparent;
+  }
+  .db-tabs button[aria-current="page"] {
+    color: var(--ink);
+    font-weight: 600;
+    border-top-color: var(--accent);
+  }
+  @media (min-width: 768px) {
+    .db-tabs {
+      padding-right: 260px; /* deja lugar al selector de vista */
+    }
+  }
+  .db-tip {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    max-width: 260px;
+    padding: 8px 10px;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 6px 18px #0000002e;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .db-tip b {
+    font-weight: 600;
+  }
+  .db-tip span {
+    color: var(--ink-2);
+  }
+  .db-noscript {
+    padding: 24px;
+  }
+</style>
+
+<script>
+  type Area = "datos" | "web" | "qa" | "soporte";
+  interface Exp {
+    id: string;
+    empresa: string;
+    rol: string;
+    desde: string;
+    hasta: string | null;
+    area: Area;
+    tags: string[];
+    meses: number;
+  }
+  interface Proj {
+    id: string;
+    titulo: string;
+    area: Area;
+    anio: number;
+    estado: string;
+    descripcion: string;
+    stack: string[];
+    imagen: string | null;
+    codigo: string | null;
+    sitio: string | null;
+  }
+  interface Data {
+    hoy: string;
+    inicio: number;
+    repos: number | null;
+    areas: Record<Area, string>;
+    experiencia: Exp[];
+    proyectos: Proj[];
+  }
+
+  const D: Data = JSON.parse(document.getElementById("db-data")!.textContent!);
+  const $ = <T extends Element>(s: string) => document.querySelector<T>(s)!;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+  const NS = "http://www.w3.org/2000/svg";
+
+  const state = { area: "todas" as Area | "todas", tech: null as string | null, proj: null as string | null, asTable: new Set<string>() };
+
+  const enArea = (a: Area) => state.area === "todas" || state.area === a;
+  const conTech = (tags: string[]) => !state.tech || tags.includes(state.tech);
+  const expVisibles = () => D.experiencia.filter((e) => enArea(e.area) && conTech(e.tags));
+  const projVisibles = () => D.proyectos.filter((p) => enArea(p.area) && conTech(p.stack));
+
+  // ── Tooltip ────────────────────────────────────────────
+  const tip = $<HTMLDivElement>("[data-tip]");
+  function showTip(html: string, x: number, y: number) {
+    tip.innerHTML = html;
+    tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    tip.style.left = `${Math.min(x + 14, innerWidth - r.width - 8)}px`;
+    tip.style.top = `${Math.max(8, y - r.height - 12)}px`;
+  }
+  const hideTip = () => (tip.hidden = true);
+  function bindTip(el: Element, html: () => string) {
+    el.addEventListener("pointermove", (e) => showTip(html(), (e as PointerEvent).clientX, (e as PointerEvent).clientY));
+    el.addEventListener("pointerleave", hideTip);
+  }
+
+  // ── KPIs ───────────────────────────────────────────────
+  function renderKpis() {
+    const exp = expVisibles();
+    const proj = projVisibles();
+    const techs = new Set([...exp.flatMap((e) => e.tags), ...proj.flatMap((p) => p.stack)]);
+    const totalMeses = exp.reduce((s, e) => s + e.meses, 0);
+    const anios = Number(D.hoy.slice(0, 4)) - D.inicio;
+    const kpis = [
+      { label: "Años en sistemas", value: String(anios), note: `Desde ${D.inicio}, UNSJ` },
+      { label: "Meses de experiencia", value: String(totalMeses), note: `${exp.length} ${exp.length === 1 ? "puesto" : "puestos"}` },
+      { label: "Proyectos", value: String(proj.length), note: "publicados o con código" },
+      { label: "Tecnologías", value: String(techs.size), note: "en el filtro actual" },
+      { label: "Repos públicos", value: D.repos === null ? "—" : String(D.repos), note: "GitHub, sin filtrar" },
+    ];
+    $("[data-kpis]").innerHTML = kpis
+      .map((k) => `<div class="kpi"><p>${k.label}</p><strong>${k.value}</strong><small>${k.note}</small></div>`)
+      .join("");
+  }
+
+  // ── Gantt de trayectoria ───────────────────────────────
+  const ym = (s: string) => Number(s.slice(0, 4)) + (Number(s.slice(5, 7)) - 1) / 12;
+  function renderGantt() {
+    const host = $<HTMLDivElement>('[data-vis="gantt"]');
+    const rows = [...D.experiencia].sort((a, b) => ym(b.desde) - ym(a.desde));
+    const visibles = new Set(expVisibles().map((e) => e.id));
+    if (state.asTable.has("gantt")) {
+      host.innerHTML = `<table class="db-table"><thead><tr><th>Puesto</th><th>Área</th><th>Período</th><th class="num">Meses</th></tr></thead><tbody>${rows
+        .filter((e) => visibles.has(e.id))
+        .map((e) => `<tr><td>${esc(e.rol)}<small>${esc(e.empresa)}</small></td><td>${D.areas[e.area]}</td><td>${e.desde} → ${e.hasta ?? "hoy"}</td><td class="num">${e.meses}</td></tr>`)
+        .join("")}</tbody></table>`;
+      return;
+    }
+    const W = host.clientWidth || 600;
+    const narrow = W < 520;
+    const labelW = narrow ? 0 : 190;
+    const rowH = narrow ? 52 : 40;
+    const top = 8;
+    const H = top + rows.length * rowH + 24;
+    const x0 = Math.floor(ym(rows[rows.length - 1].desde));
+    const x1 = ym(D.hoy) + 1 / 12;
+    const sx = (v: number) => labelW + ((v - x0) / (x1 - x0)) * (W - labelW - 8);
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Línea de tiempo de la experiencia laboral, por área");
+    let g = `<g class="grid">`;
+    for (let y = x0; y <= Math.floor(x1); y++) {
+      g += `<line x1="${sx(y)}" x2="${sx(y)}" y1="${top}" y2="${H - 22}"/><text x="${sx(y) + 4}" y="${H - 6}">${y}</text>`;
+    }
+    g += `</g>`;
+    rows.forEach((e, i) => {
+      const y = top + i * rowH;
+      const a = sx(ym(e.desde));
+      const b = Math.max(a + 6, sx(ym(e.hasta ?? D.hoy) + 1 / 12));
+      const dim = visibles.has(e.id) ? "" : " is-dim";
+      const barY = narrow ? y + 26 : y + 15;
+      const label = narrow
+        ? `<text class="t-strong" x="0" y="${y + 16}">${esc(e.empresa)} · <tspan>${esc(e.rol)}</tspan></text>`
+        : `<text class="t-strong" x="0" y="${y + 18}">${esc(e.empresa)}</text><text x="0" y="${y + 33}">${esc(e.rol.length > 28 ? e.rol.slice(0, 27) + "…" : e.rol)}</text>`;
+      g += `<g class="mark${dim}" data-exp="${e.id}">${label}<rect x="${a}" y="${barY}" width="${b - a}" height="14" rx="4" fill="var(--a-${e.area})"/><rect class="hit" x="${a - 4}" y="${barY - 8}" width="${b - a + 8}" height="30"/></g>`;
+    });
+    svg.innerHTML = g;
+    host.replaceChildren(svg);
+    svg.querySelectorAll<SVGGElement>("[data-exp]").forEach((el) => {
+      const e = D.experiencia.find((x) => x.id === el.dataset.exp)!;
+      bindTip(el, () => `<b>${esc(e.rol)}</b><br><span>${esc(e.empresa)} · ${D.areas[e.area]}</span><br>${e.desde} → ${e.hasta ?? "hoy"} · ${e.meses} meses<br><span>${esc(e.tags.join(", "))}</span>`);
+    });
+  }
+
+  function renderLegend() {
+    $("[data-legend]").innerHTML = (Object.keys(D.areas) as Area[])
+      .map((a) => `<span><i class="sw sw-${a}"></i>${D.areas[a]}</span>`)
+      .join("");
+  }
+
+  // ── Barras de tecnologías ──────────────────────────────
+  function techCounts() {
+    const counts = new Map<string, { n: number; area: Area }>();
+    const add = (t: string, area: Area) => {
+      const c = counts.get(t) ?? { n: 0, area };
+      c.n++;
+      counts.set(t, c);
+    };
+    D.experiencia.filter((e) => enArea(e.area)).forEach((e) => e.tags.forEach((t) => add(t, e.area)));
+    D.proyectos.filter((p) => enArea(p.area)).forEach((p) => p.stack.forEach((t) => add(t, p.area)));
+    return [...counts.entries()].sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0])).slice(0, 10);
+  }
+  function renderTechs() {
+    const host = $<HTMLDivElement>('[data-vis="techs"]');
+    const rows = techCounts();
+    if (state.asTable.has("techs")) {
+      host.innerHTML = `<table class="db-table"><thead><tr><th>Tecnología</th><th class="num">Apariciones</th></tr></thead><tbody>${rows
+        .map(([t, c]) => `<tr><td>${esc(t)}</td><td class="num">${c.n}</td></tr>`)
+        .join("")}</tbody></table>`;
+      return;
+    }
+    const W = host.clientWidth || 300;
+    const labelW = 104;
+    const rowH = 28;
+    const H = rows.length * rowH;
+    const max = Math.max(...rows.map(([, c]) => c.n), 1);
+    const sx = (v: number) => (v / max) * (W - labelW - 28);
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Tecnologías ordenadas por cantidad de apariciones");
+    svg.innerHTML = rows
+      .map(([t, c], i) => {
+        const y = i * rowH;
+        const dim = state.tech && state.tech !== t ? " is-dim" : "";
+        return `<g class="mark${dim}" data-tech="${esc(t)}"><text class="t-strong" x="0" y="${y + 18}">${esc(t)}</text><rect x="${labelW}" y="${y + 7}" width="${Math.max(4, sx(c.n))}" height="14" rx="4" fill="var(--a-${c.area})"/><text x="${labelW + sx(c.n) + 6}" y="${y + 18}">${c.n}</text><rect class="hit" x="0" y="${y}" width="${W}" height="${rowH}"/></g>`;
+      })
+      .join("");
+    host.replaceChildren(svg);
+    svg.querySelectorAll<SVGGElement>("[data-tech]").forEach((el) => {
+      const t = el.dataset.tech!;
+      const c = rows.find(([n]) => n === t)![1];
+      bindTip(el, () => `<b>${esc(t)}</b><br><span>${c.n} ${c.n === 1 ? "aparición" : "apariciones"} · clic para filtrar</span>`);
+      el.addEventListener("click", () => {
+        state.tech = state.tech === t ? null : t;
+        hideTip();
+        renderAll();
+      });
+    });
+  }
+
+  // ── Tabla y detalle de proyectos ───────────────────────
+  function renderProyectos() {
+    const host = $<HTMLDivElement>('[data-vis="proyectos"]');
+    const rows = projVisibles();
+    $("[data-proj-count]").textContent = `${rows.length} de ${D.proyectos.length}`;
+    if (!rows.some((p) => p.id === state.proj)) state.proj = rows[0]?.id ?? null;
+    host.innerHTML = rows.length
+      ? `<table class="db-table"><thead><tr><th>Proyecto</th><th>Área</th><th class="num">Año</th><th>Estado</th></tr></thead><tbody>${rows
+          .map(
+            (p) =>
+              `<tr data-row="${p.id}" tabindex="0" aria-selected="${p.id === state.proj}"><td>${esc(p.titulo)}<small>${esc(p.stack.join(" · "))}</small></td><td><span class="db-area"><i class="sw sw-${p.area}"></i>${D.areas[p.area]}</span></td><td class="num">${p.anio}</td><td>${esc(p.estado)}</td></tr>`,
+          )
+          .join("")}</tbody></table>`
+      : `<p class="vis-note">Ningún proyecto con este filtro.</p>`;
+    host.querySelectorAll<HTMLTableRowElement>("[data-row]").forEach((tr) => {
+      const pick = () => {
+        state.proj = tr.dataset.row!;
+        renderProyectos();
+      };
+      tr.addEventListener("click", pick);
+      tr.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          pick();
+        }
+      });
+    });
+    const p = D.proyectos.find((x) => x.id === state.proj);
+    const detail = $<HTMLElement>("[data-proj-detail]");
+    detail.className = "vis db-detail";
+    detail.innerHTML = p
+      ? `<header><h2>${esc(p.titulo)}</h2></header>${p.imagen ? `<img src="${p.imagen}" alt="Captura de ${esc(p.titulo)}" loading="lazy">` : ""}<p>${esc(p.descripcion)}</p><ul>${p.stack.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>${p.sitio ? `<a href="${p.sitio}" target="_blank" rel="noopener">Ver sitio ↗</a>` : ""}${p.codigo ? `<a href="${p.codigo}" target="_blank" rel="noopener">Ver código ↗</a>` : ""}`
+      : `<p class="vis-note">Elegí un proyecto de la tabla.</p>`;
+  }
+
+  // ── Filtros, páginas y render ──────────────────────────
+  function renderFilters() {
+    document.querySelectorAll<HTMLButtonElement>("[data-area]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.area === state.area)));
+    const chip = $<HTMLButtonElement>("[data-tech-chip]");
+    chip.hidden = !state.tech;
+    $("[data-tech-name]").textContent = state.tech ?? "";
+  }
+  function renderAll() {
+    renderFilters();
+    renderKpis();
+    renderGantt();
+    renderTechs();
+    renderProyectos();
+  }
+
+  document.querySelectorAll<HTMLButtonElement>("[data-area]").forEach((b) =>
+    b.addEventListener("click", () => {
+      state.area = b.dataset.area as Area | "todas";
+      renderAll();
+    }),
+  );
+  $("[data-tech-chip]").addEventListener("click", () => {
+    state.tech = null;
+    renderAll();
+  });
+  document.querySelectorAll<HTMLButtonElement>("[data-toggle]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const k = b.dataset.toggle!;
+      if (state.asTable.has(k)) state.asTable.delete(k);
+      else state.asTable.add(k);
+      b.textContent = state.asTable.has(k) ? "Ver como gráfico" : "Ver como tabla";
+      renderAll();
+    }),
+  );
+  const tabs = document.querySelectorAll<HTMLButtonElement>("[data-tab]");
+  tabs.forEach((t, i) =>
+    t.addEventListener("click", () => {
+      tabs.forEach((x) => x.removeAttribute("aria-current"));
+      t.setAttribute("aria-current", "page");
+      document.querySelectorAll<HTMLElement>("[data-page]").forEach((p) => (p.hidden = p.dataset.page !== t.dataset.tab));
+      $("[data-page-n]").textContent = String(i + 1);
+      renderAll(); // los gráficos miden su contenedor: recién ahora tiene ancho
+      scrollTo({ top: 0 });
+    }),
+  );
+
+  renderLegend();
+  renderAll();
+  let rt = 0;
+  addEventListener("resize", () => {
+    clearTimeout(rt);
+    rt = window.setTimeout(renderAll, 150);
+  });
+</script>
