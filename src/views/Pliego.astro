@@ -1,0 +1,279 @@
+---
+// Vista «Pliego 3D»: un fanzine en dos tintas (rojo fluo y azul, como una
+// risografía) que se despliega con el scroll; horizontal en desktop, hacia
+// abajo en mobile. Al final se repliega y sale volando como avión de papel.
+// Motor del pliego de los experimentos de Amine (scripts/pliego/). Con
+// «reducir movimiento» o sin WebGL se muestra el pliego abierto y quieto.
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import { habilidades } from "@/data/perfil";
+import { contenido, periodoL, ruta, t, type Lang } from "@/data/i18n";
+import { casos } from "@/data/casos";
+import "@/scripts/pliego/pliego.css";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const { perfil, experiencia, proyectos, estudios, charlas, AREAS } = contenido(lang);
+const base = import.meta.env.BASE_URL;
+const conCaso = new Set(casos.map((c) => c.id));
+const [nombre, apellido] = perfil.nombre.split(" ");
+const stack = (["datos", "web", "qa"] as const).map((a) => ({ area: AREAS[a], items: habilidades.filter((h) => h.area === a).map((h) => h.nombre) }));
+const pliegoN = t(lang, "Pliego n.º 1", "Zine no. 1");
+
+const data = {
+  nombre,
+  apellido,
+  rol: perfil.rol,
+  sitio: "ign4cho.github.io",
+  t: {
+    abrir: t(lang, "Abrir el pliego", "Open the zine"),
+    experiencia: t(lang, "Experiencia", "Experience"),
+    proyectos: t(lang, "Proyectos", "Projects"),
+    stack: "Stack",
+    formacion: t(lang, "Formación", "Education"),
+    contacto: t(lang, "Contacto", "Contact"),
+    escribime: t(lang, "Escribime", "Write me"),
+    fin: t(lang, "Fin", "End"),
+    trayectoria: t(lang, "Trayectoria", "Career"),
+    loQueHice: t(lang, "Lo que hice", "What I built"),
+    herramientas: t(lang, "Herramientas", "Tools"),
+    estudios: t(lang, "Estudios", "Studies"),
+    pliego: pliegoN,
+    base: t(lang, "Base", "Based in"),
+  },
+  experiencia: experiencia.map((e) => ({ empresa: e.empresa, rol: e.rol, periodo: periodoL(lang, e.desde, e.hasta) })),
+  proyectos: proyectos.map((p) => ({ titulo: p.titulo, meta: `${AREAS[p.area]} · ${p.anio} · ${p.estado}` })),
+  stack: stack.map((g) => ({ area: g.area, items: g.items.slice(0, 6) })),
+  estudios: [
+    ...estudios.slice(0, 2).map((e) => ({ titulo: e.titulo, institucion: e.institucion, anio: String(e.desde) })),
+    { titulo: charlas[0].evento.split(" · ")[0], institucion: charlas[0].lugar, anio: charlas[0].fecha.slice(0, 4) },
+  ],
+  contacto: [
+    ["Email", perfil.email],
+    ["GitHub", perfil.github.replace("https://", "")],
+    ["LinkedIn", perfil.linkedin.replace("https://www.", "").replace(/\/$/, "")],
+    [t(lang, "Base", "Based in"), perfil.ubicacion],
+  ] as [string, string][],
+  images: {
+    foto: `${base}foto_perfil_recorte.jpg`,
+    elargot: `${base}${proyectos.find((p) => p.id === "tienda_online")!.imagen}`,
+    tesis: `${base}${proyectos.find((p) => p.id === "tesis_sube")!.imagen}`,
+  },
+};
+---
+
+<ViewLayout
+  title={t(lang, "Ignacio Colomé · Pliego 3D", "Ignacio Colomé · 3D zine")}
+  description={t(
+    lang,
+    "El portfolio de Ignacio Colomé como un fanzine en dos tintas que se despliega en 3D con el scroll.",
+    "Ignacio Colomé's portfolio as a two-ink zine that unfolds in 3D as you scroll.",
+  )}
+  vista="pliego"
+  lang={lang}
+>
+  <Fragment slot="head">
+    <script is:inline>document.documentElement.classList.add("js");</script>
+    <meta name="theme-color" content="#161413" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </Fragment>
+
+  <a class="skip-link" href="#pliego">{t(lang, "Saltar al contenido", "Skip to content")}</a>
+  <header class="masthead">
+    <a href="#pliego" class="brand" data-goto="0">{apellido.toUpperCase()} <span>{pliegoN}</span></a>
+    <div class="masthead-right">
+      <span class="counter" data-counter data-portada={t(lang, "Portada", "Cover")} data-fin={t(lang, "Fin", "End")} aria-hidden="true">{t(lang, "Portada", "Cover")}</span>
+      <button class="light-btn" type="button" data-light data-on={t(lang, "Luz encendida", "Light on")} hidden aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <span>{t(lang, "Encender la luz", "Turn on the light")}</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="pliego">
+    <div class="track" data-track>
+      <div class="stage" data-stage>
+        <div class="backdrop" aria-hidden="true">
+          <span class="ghost">{apellido.toUpperCase()}</span>
+        </div>
+        <canvas class="gl" data-canvas aria-hidden="true"></canvas>
+
+        <section class="cap cap-hero on" data-cap="0" data-at="0" data-until="0.3" aria-labelledby="t0">
+          <div class="proof" data-proof></div>
+          <div class="cap-body">
+            <p class="kicker">{pliegoN} · {t(lang, "Impreso en dos tintas", "Printed in two inks")}</p>
+            <h1 id="t0">{perfil.nombre}</h1>
+            <p class="lead">
+              {t(
+                lang,
+                "Analista de datos en Datyo y desarrollador web. Un fanzine con mi trayectoria, impreso en tu navegador.",
+                "Data analyst at Datyo and web developer. A zine with my career, printed in your browser.",
+              )}
+            </p>
+            <p class="hint hint-3d">
+              <span class="hint-desk">{t(lang, "Mové el cursor: la luz te sigue. ", "Move the cursor: the light follows you. ")}</span>
+              {t(lang, "Bajá", "Scroll down")}<span class="hint-desk">{t(lang, ", hacé clic en el pliego o usá →", ", click the zine or press →")}</span>
+              {t(lang, " para desplegarlo", " to unfold it")} <span aria-hidden="true" class="arrow">↓</span>
+            </p>
+          </div>
+        </section>
+
+        <section class="cap" data-cap="1" data-at="1" aria-labelledby="t1">
+          <div class="proof" data-proof></div>
+          <div class="cap-body">
+            <p class="kicker">01 / 05 · {data.t.trayectoria}</p>
+            <h2 id="t1">{data.t.experiencia}</h2>
+            <ol class="svc">
+              {
+                experiencia.slice(0, 4).map((e) => (
+                  <li>
+                    <strong>
+                      {e.empresa} · {e.rol}
+                    </strong>
+                    <span>{periodoL(lang, e.desde, e.hasta)}</span>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </section>
+
+        <section class="cap" data-cap="2" data-at="2" aria-labelledby="t2">
+          <div class="proof" data-proof></div>
+          <div class="cap-body">
+            <p class="kicker">02 / 05 · {data.t.loQueHice}</p>
+            <h2 id="t2">{data.t.proyectos}</h2>
+            <ol class="svc">
+              {
+                proyectos.map((p) => (
+                  <li>
+                    <strong>{p.titulo}</strong>
+                    <span class="svc-links">
+                      {conCaso.has(p.id) && <a href={ruta(lang, `casos/${p.id}/`)}>{t(lang, "Caso", "Case")} →</a>}
+                      {(p.extra ?? (p.sitio ? [{ label: t(lang, "Sitio", "Site"), href: p.sitio }] : [])).slice(0, 2).map((l) => (
+                        <a href={l.href} target="_blank" rel="noopener">
+                          {l.label} ↗
+                        </a>
+                      ))}
+                    </span>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </section>
+
+        <section class="cap" data-cap="3" data-at="3" aria-labelledby="t3">
+          <div class="proof" data-proof></div>
+          <div class="cap-body">
+            <p class="kicker">03 / 05 · {data.t.herramientas}</p>
+            <h2 id="t3">Stack</h2>
+            {
+              stack.map((g) => (
+                <div class="stack-g">
+                  <span>{g.area}</span>
+                  <ul class="names">
+                    {g.items.map((h) => (
+                      <li>{h}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+          </div>
+        </section>
+
+        <section class="cap" data-cap="4" data-at="4" aria-labelledby="t4">
+          <div class="proof" data-proof></div>
+          <div class="cap-body">
+            <p class="kicker">04 / 05 · {data.t.estudios}</p>
+            <h2 id="t4">{data.t.formacion}</h2>
+            <ol class="svc">
+              {
+                estudios.map((e) => (
+                  <li>
+                    <strong>{e.titulo}</strong>
+                    <span>{e.institucion}</span>
+                  </li>
+                ))
+              }
+              {
+                charlas.map((c) => (
+                  <li>
+                    <strong>{t(lang, "Charla", "Talk")} · {c.lugar}</strong>
+                    <span class="svc-desc">{c.titulo}</span>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </section>
+
+        <section class="cap" data-cap="5" data-at="5" data-until="5.55" aria-labelledby="t5">
+          <div class="proof" data-proof></div>
+          <div class="cap-body">
+            <p class="kicker">05 / 05 · {data.t.contacto}</p>
+            <h2 id="t5">{data.t.escribime}</h2>
+            <dl class="contact">
+              <div><dt>Email</dt><dd><a href={`mailto:${perfil.email}`}>{perfil.email}</a></dd></div>
+              <div><dt>GitHub</dt><dd><a href={perfil.github} target="_blank" rel="noopener">Ign4cho</a></dd></div>
+              <div><dt>LinkedIn</dt><dd><a href={perfil.linkedin} target="_blank" rel="noopener">ignacio-colome</a></dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <section class="cap cap-end" data-cap="6" data-at="6.55" aria-labelledby="t6">
+          <div class="cap-body">
+            <p class="kicker">
+              <span class="only-3d">{t(lang, "El pliego ya salió volando", "The zine just flew away")}</span>
+              <span class="only-flat">{t(lang, "Fin del pliego", "End of the zine")}</span>
+            </p>
+            <h2 id="t6">{t(lang, "¿Arrancamos?", "Shall we?")}</h2>
+            <p class="lead">{perfil.disponibilidad}. {t(lang, "Contame qué tenés en mente.", "Tell me what you have in mind.")}</p>
+            <p class="end-actions">
+              <a class="btn" href={`mailto:${perfil.email}`}>{t(lang, "Escribime", "Email me")} <span aria-hidden="true">↗</span></a>
+              <a class="btn-ghost" href="#pliego" data-goto="0">
+                <span class="only-3d">{t(lang, "Volver a plegar", "Fold it back")}</span>
+                <span class="only-flat">{t(lang, "Volver al principio", "Back to the top")}</span>
+                <span aria-hidden="true">↑</span>
+              </a>
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="colophon">
+    <div class="colophon-in">
+      <p class="kicker">{t(lang, "Colofón", "Colophon")}</p>
+      <p>
+        {
+          t(
+            lang,
+            "Pliego n.º 1 de Ignacio Colomé. Impreso en dos tintas digitales, rojo fluo y azul, sobre un papel que se genera en tu navegador. Se despliega con Three.js (WebGPU, o WebGL2 si tu navegador no lo tiene), Astro y Lenis. El motor viene del pliego que hice para Amine.",
+            "Zine no. 1 by Ignacio Colomé. Printed in two digital inks, fluorescent red and blue, on paper generated in your browser. It unfolds with Three.js (WebGPU, or WebGL2 if your browser lacks it), Astro and Lenis. The engine comes from the zine I made for Amine.",
+          )
+        }
+      </p>
+      <p class="colophon-links">
+        <a href={`mailto:${perfil.email}`}>{perfil.email}</a>
+        <a href={perfil.github} target="_blank" rel="noopener">GitHub</a>
+        <a href={perfil.linkedin} target="_blank" rel="noopener">LinkedIn</a>
+      </p>
+      <p class="small">© {new Date().getFullYear()} {perfil.nombre} · {perfil.ubicacion}</p>
+    </div>
+  </footer>
+
+  <script type="application/json" id="pliego-data" set:html={JSON.stringify(data)} />
+
+  <script>
+    import "@/scripts/pliego/escena";
+  </script>
+</ViewLayout>

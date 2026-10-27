@@ -1,0 +1,145 @@
+---
+// Índice lateral numerado, compartido por las vistas que se leen con scroll.
+// Muestra «03 / 07» con la sección visible y la lista al pasar el mouse o con
+// foco. Se tiñe con variables: --ix-ink, --ix-ink-2, --ix-accent, --ix-bg y
+// --ix-font. Oculto en pantallas angostas.
+interface Props {
+  secciones: { id: string; nombre: string }[];
+  label?: string;
+}
+
+const { secciones, label = "Índice" } = Astro.props;
+const total = String(secciones.length - 1).padStart(2, "0");
+---
+
+<nav class="ix" aria-label={label} data-indice>
+  <p class="ix-cont" aria-hidden="true"><b data-ix-n>00</b> / {total}</p>
+  <ol>
+    {
+      secciones.map((s, i) => (
+        <li>
+          <a href={`#${s.id}`} data-ix={s.id}>
+            <span class="ix-n">{String(i).padStart(2, "0")}</span>
+            <span class="ix-t">{s.nombre}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  .ix {
+    --ix-ink: currentColor;
+    position: fixed;
+    z-index: 900;
+    left: clamp(12px, 2vw, 28px);
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--ix-font, ui-monospace, Consolas, monospace);
+    font-size: 12px;
+    color: var(--ix-ink-2, currentColor);
+  }
+  @media (max-width: 1099px) {
+    .ix {
+      display: none;
+    }
+  }
+  .ix-cont {
+    margin: 0 0 10px;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+  }
+  .ix-cont b {
+    color: var(--ix-accent, currentColor);
+    font-weight: 700;
+  }
+  .ix ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .ix a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 28px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .ix-n {
+    position: relative;
+    width: 22px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ix-n::after {
+    content: "";
+    position: absolute;
+    left: 26px;
+    top: 50%;
+    width: 10px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+    transition: width 0.3s;
+  }
+  .ix-t {
+    padding: 3px 8px;
+    margin-left: 16px;
+    border-radius: 4px;
+    background: var(--ix-bg, transparent);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity 0.2s,
+      transform 0.3s;
+  }
+  .ix:hover .ix-t,
+  .ix:focus-within .ix-t {
+    opacity: 1;
+    transform: none;
+  }
+  .ix a[aria-current="true"] {
+    color: var(--ix-ink, currentColor);
+  }
+  .ix a[aria-current="true"] .ix-n {
+    color: var(--ix-accent, currentColor);
+    font-weight: 700;
+  }
+  .ix a[aria-current="true"] .ix-n::after {
+    width: 18px;
+    opacity: 1;
+  }
+  .ix a:focus-visible {
+    outline: 2px solid var(--ix-accent, currentColor);
+    outline-offset: 2px;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-indice]").forEach((nav) => {
+    const links = [...nav.querySelectorAll<HTMLAnchorElement>("[data-ix]")];
+    const num = nav.querySelector<HTMLElement>("[data-ix-n]");
+    const secs = links.map((a) => document.getElementById(a.dataset.ix!)).filter((s): s is HTMLElement => !!s);
+    const activar = (id: string) => {
+      links.forEach((a, i) => {
+        const on = a.dataset.ix === id;
+        a.setAttribute("aria-current", String(on));
+        if (on && num) num.textContent = String(i).padStart(2, "0");
+      });
+    };
+    // La sección activa es la última cuyo borde superior pasó el 40 % de la pantalla.
+    const actualizar = () => {
+      const linea = innerHeight * 0.4;
+      let id = secs[0]?.id;
+      for (const s of secs) if (s.getBoundingClientRect().top <= linea) id = s.id;
+      if (id) activar(id);
+    };
+    addEventListener("scroll", actualizar, { passive: true });
+    addEventListener("resize", actualizar);
+    actualizar();
+  });
+</script>

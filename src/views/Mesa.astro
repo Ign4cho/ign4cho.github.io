@@ -1,0 +1,1211 @@
+---
+// Vista «Mesa»: el portfolio como un escritorio con objetos que se arrastran
+// (CV, polaroid, capturas de los proyectos, cuaderno, carnet, café). Cada objeto
+// abre un panel; abajo está la misma información en lista. Motor de la mesa de
+// los experimentos de Amine: GSAP Draggable + Inertia y posiciones guardadas
+// como fracción de la mesa. Contenido de perfil.ts (vía i18n).
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import MesaContenido, { type SeccionMesa } from "@/components/MesaContenido.astro";
+import { contenido, t, type Lang } from "@/data/i18n";
+import { habilidades } from "@/data/perfil";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const { perfil, experiencia, proyectos } = contenido(lang);
+const base = import.meta.env.BASE_URL;
+const proj = (id: string) => proyectos.find((p) => p.id === id)!;
+
+// Posición de reposo: x / y en % de la mesa, w = ancho, r = giro.
+// Prefijo m = mobile; mw se multiplica por --u (1vw acotado por el alto).
+type Item = {
+  id: string; label: string; open?: SeccionMesa; focus?: string; href?: string;
+  w: string; x: number; y: number; r: number; mw: number; mx: number; my: number; mr: number; z?: number;
+};
+const P = (id: string) => `${proj(id).titulo}`;
+const items: Item[] = [
+  { id: "cv", label: t(lang, "Hoja con la experiencia", "Sheet with my experience"), open: "cv", w: "clamp(230px, 20vw, 330px)", x: 5, y: 13, r: -4, mw: 46, mx: 3, my: 9, mr: -4, z: 2 },
+  { id: "foto", label: t(lang, "Polaroid: quién soy", "Polaroid: about me"), open: "sobre", w: "clamp(150px, 13vw, 220px)", x: 28, y: 12, r: 7, mw: 34, mx: 60, my: 7, mr: 6 },
+  { id: "p-tienda", label: P("tienda_online"), open: "proyectos", focus: "tienda_online", w: "clamp(200px, 17vw, 290px)", x: 46, y: 14, r: -3, mw: 42, mx: 54, my: 33, mr: 4 },
+  { id: "p-amine", label: P("espacioamine"), open: "proyectos", focus: "espacioamine", w: "clamp(190px, 16vw, 270px)", x: 69, y: 11, r: 5, mw: 40, mx: 6, my: 45, mr: -5 },
+  { id: "p-exp", label: P("experimentos_amine"), open: "proyectos", focus: "experimentos_amine", w: "clamp(190px, 16vw, 270px)", x: 54, y: 52, r: 4, mw: 40, mx: 55, my: 57, mr: -3 },
+  { id: "p-tesis", label: P("tesis_sube"), open: "proyectos", focus: "tesis_sube", w: "clamp(190px, 16vw, 270px)", x: 76, y: 47, r: -6, mw: 40, mx: 8, my: 68, mr: 5 },
+  { id: "cuaderno", label: t(lang, "Cuaderno con el stack", "Notebook with my stack"), open: "stack", w: "clamp(190px, 16vw, 270px)", x: 27, y: 50, r: -7, mw: 38, mx: 30, my: 23, mr: -8 },
+  { id: "carnet", label: t(lang, "Carnet de la universidad: formación", "University ID: education"), open: "formacion", w: "clamp(170px, 14vw, 230px)", x: 7, y: 63, r: 6, mw: 36, mx: 60, my: 80, mr: 6 },
+  { id: "cafe", label: t(lang, "Taza de café: contacto", "Coffee mug: contact"), open: "contacto", w: "clamp(120px, 10vw, 170px)", x: 41, y: 72, r: 0, mw: 26, mx: 36, my: 82, mr: 0 },
+  { id: "postit", label: t(lang, `Post-it: escribirme a ${perfil.email}`, `Sticky note: email me at ${perfil.email}`), href: `mailto:${perfil.email}`, w: "clamp(140px, 11vw, 190px)", x: 85, y: 76, r: 4, mw: 30, mx: 2, my: 84, mr: -4 },
+];
+const decor = [
+  { id: "lapiz", w: "clamp(150px, 13vw, 220px)", x: 36, y: 40, r: 32, mw: 30, mx: 30, my: 40, mr: 30 },
+  { id: "clip", w: "clamp(30px, 2.4vw, 42px)", x: 22, y: 12, r: -20, mw: 7, mx: 44, my: 8, mr: -20 },
+  { id: "mancha", w: "clamp(110px, 9vw, 150px)", x: 88, y: 12, r: 0, mw: 22, mx: 76, my: 50, mr: 0 },
+];
+const secciones: SeccionMesa[] = ["cv", "sobre", "proyectos", "stack", "formacion", "contacto"];
+const pos = (o: { w: string; x: number; y: number; r: number; mw: number; mx: number; my: number; mr: number; z?: number }) =>
+  `--w:${o.w};--x:${o.x}%;--y:${o.y}%;--r:${o.r}deg;--mw:${o.mw};--mx:${o.mx}%;--my:${o.my}%;--mr:${o.mr}deg;--z:${o.z ?? 1}`;
+const imgDe: Record<string, string | null> = {
+  "p-tienda": proj("tienda_online").imagen,
+  "p-amine": proj("espacioamine").imagen,
+  "p-exp": proj("experimentos_amine").imagen,
+  "p-tesis": proj("tesis_sube").imagen,
+};
+const datyo = experiencia[0];
+---
+
+<ViewLayout
+  title={t(lang, "Ignacio Colomé · La mesa", "Ignacio Colomé · The desk")}
+  description={t(
+    lang,
+    "El portfolio de Ignacio Colomé como una mesa de trabajo: arrastrá los objetos y abrí lo que te interese.",
+    "Ignacio Colomé's portfolio as a work desk: drag the objects around and open whatever you like.",
+  )}
+  vista="mesa"
+  lang={lang}
+>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Courier+Prime:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </Fragment>
+
+  <div class="ms">
+    <header class="ms-top">
+      <a href="#mesa" class="ms-marca">{perfil.nombre}</a>
+      <div class="ms-acciones">
+        <button type="button" class="ms-btn" data-tidy>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><path d="M4 12a8 8 0 0 1 13.66-5.66L20 8.7M20 4v4.7h-4.7M20 12a8 8 0 0 1-13.66 5.66L4 15.3M4 20v-4.7h4.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span>{t(lang, "Ordenar", "Tidy up")}</span>
+        </button>
+        <a href="#lista" class="ms-btn">{t(lang, "Ver en lista", "List view")}</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="desk" id="mesa" aria-label={t(lang, "Mesa de trabajo: arrastrá los objetos y tocá uno para abrirlo", "Work desk: drag the objects and tap one to open it")} data-desk>
+        <h1 class="ms-sr">{perfil.nombre} · {perfil.rol}</h1>
+
+        {
+          decor.map((d) => (
+            <div class={`item item--decor deco-${d.id}`} style={pos(d)} data-item={d.id} aria-hidden="true">
+              <span />
+            </div>
+          ))
+        }
+
+        {
+          items.map((it) => (
+            <button
+              type="button"
+              class:list={["item", `item--${it.id}`]}
+              style={pos(it)}
+              data-item={it.id}
+              data-open={it.open}
+              data-focus={it.focus}
+              data-href={it.href}
+              aria-label={it.label}
+              aria-haspopup={it.open ? "dialog" : undefined}
+            >
+              {it.id === "cv" && (
+                <span class="o-cv" aria-hidden="true">
+                  <span class="o-cv-nombre">{perfil.nombre}</span>
+                  <span class="o-cv-rol">{perfil.rol}</span>
+                  <span class="o-cv-sep" />
+                  {experiencia.slice(0, 4).map((e) => (
+                    <span class="o-cv-fila">
+                      <b>{e.empresa}</b>
+                      <i>{e.desde.slice(0, 4)}</i>
+                    </span>
+                  ))}
+                  <span class="o-cv-lineas" />
+                  <span class="o-cv-sello">CV</span>
+                </span>
+              )}
+              {it.id === "foto" && (
+                <span class="o-polaroid" aria-hidden="true">
+                  <img src={`${base}foto_perfil_recorte.jpg`} alt="" draggable="false" loading="eager" />
+                  <span>{perfil.alias} · 2026</span>
+                </span>
+              )}
+              {it.id.startsWith("p-") && (
+                <span class="o-print" aria-hidden="true">
+                  <span class="o-cinta" />
+                  {imgDe[it.id] && <img src={`${base}${imgDe[it.id]}`} alt="" draggable="false" loading="eager" />}
+                  <span class="o-print-pie">{it.label}</span>
+                </span>
+              )}
+              {it.id === "cuaderno" && (
+                <span class="o-cuaderno" aria-hidden="true">
+                  <span class="o-cuaderno-t">stack</span>
+                  {habilidades.slice(0, 7).map((h) => (
+                    <span class="o-cuaderno-l">✓ {h.nombre}</span>
+                  ))}
+                </span>
+              )}
+              {it.id === "carnet" && (
+                <span class="o-carnet" aria-hidden="true">
+                  <span class="o-carnet-top">UNSJ</span>
+                  <span class="o-carnet-body">
+                    <img src={`${base}foto_perfil_recorte.jpg`} alt="" draggable="false" />
+                    <span>
+                      <b>{perfil.nombre}</b>
+                      <small>{t(lang, "Lic. en Sistemas de Información", "B.Sc. Information Systems")}</small>
+                    </span>
+                  </span>
+                </span>
+              )}
+              {it.id === "cafe" && (
+                <span class="o-cafe" aria-hidden="true">
+                  <span class="o-cafe-vapor" />
+                </span>
+              )}
+              {it.id === "postit" && (
+                <span class="o-postit" aria-hidden="true">
+                  <b>{t(lang, "¡Escribime!", "Write me!")}</b>
+                  {perfil.email}
+                  <small>{perfil.disponibilidad}</small>
+                </span>
+              )}
+              {it.href && <span class="item-tag">Email ↗</span>}
+            </button>
+          ))
+        }
+
+        <p class="desk-hint" data-hint>
+          <span class="hint-drag">{t(lang, "Arrastrá las cosas", "Drag things around")}</span> · <span>{t(lang, "tocá una para abrirla", "tap one to open it")}</span>
+        </p>
+        <a href="#lista" class="desk-down" aria-label={t(lang, "Bajar a la versión en lista", "Go down to the list view")}><span aria-hidden="true">↓</span></a>
+      </section>
+
+      {
+        secciones.map((s) => (
+          <dialog class="panel" id={`panel-${s}`} data-panel={s}>
+            <div class="panel-sheet">
+              <button type="button" class="panel-close" data-close aria-label={t(lang, "Cerrar y volver a la mesa", "Close and go back to the desk")}>
+                <span aria-hidden="true" />
+              </button>
+              <MesaContenido section={s} lang={lang} scope="panel" />
+            </div>
+          </dialog>
+        ))
+      }
+
+      <section class="list" id="lista" aria-labelledby="lista-t">
+        <header class="list-head">
+          <p class="mc-k">{t(lang, "Para leer de corrido", "To read straight through")}</p>
+          <h2 id="lista-t" class="list-title">{t(lang, "La mesa, ordenada", "The desk, tidied up")}</h2>
+          <p class="mc-lead">{datyo.rol} · {datyo.empresa}. {perfil.disponibilidad}.</p>
+        </header>
+        {
+          secciones.map((s) => (
+            <div class="list-block">
+              <MesaContenido section={s} lang={lang} scope="lista" />
+            </div>
+          ))
+        }
+      </section>
+    </main>
+
+    <footer class="ms-pie">
+      <p>{t(lang, "Hecho con Astro y GSAP. La taza está vacía.", "Built with Astro and GSAP. The mug is empty.")}</p>
+      <p><a href="#mesa">{t(lang, "Volver a la mesa", "Back to the desk")} ↑</a></p>
+    </footer>
+  </div>
+</ViewLayout>
+
+<script>
+  import { gsap } from "gsap";
+  import { Draggable } from "gsap/Draggable";
+  import { InertiaPlugin } from "gsap/InertiaPlugin";
+
+  gsap.registerPlugin(Draggable, InertiaPlugin);
+
+  const desk = document.querySelector<HTMLElement>("[data-desk]")!;
+  const items = [...desk.querySelectorAll<HTMLElement>("[data-item]")];
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const STORE = "pf-mesa-posiciones";
+
+  // ── Paneles ────────────────────────────────────────────────
+  let lastTrigger: HTMLElement | null = null;
+  function openPanel(name: string, focus?: string, trigger?: HTMLElement) {
+    const dialog = document.querySelector<HTMLDialogElement>(`[data-panel="${name}"]`);
+    if (!dialog) return;
+    lastTrigger = trigger ?? null;
+    dialog.showModal();
+    document.documentElement.classList.add("panel-open");
+    const sheet = dialog.querySelector<HTMLElement>(".panel-sheet")!;
+    sheet.scrollTop = 0;
+    // Las imágenes lazy no cargan solas dentro de un dialog recién abierto.
+    dialog.querySelectorAll<HTMLImageElement>('img[loading="lazy"]').forEach((img) => {
+      img.loading = "eager";
+    });
+    if (focus) document.getElementById(`panel-p-${focus}`)?.scrollIntoView({ block: "start" });
+  }
+  function closePanel(dialog: HTMLDialogElement) {
+    dialog.classList.add("is-closing");
+    setTimeout(
+      () => {
+        dialog.classList.remove("is-closing");
+        dialog.close();
+      },
+      reduce ? 0 : 320,
+    );
+  }
+  document.querySelectorAll<HTMLDialogElement>("dialog.panel").forEach((dialog) => {
+    dialog.addEventListener("close", () => {
+      document.documentElement.classList.remove("panel-open");
+      lastTrigger?.focus({ preventScroll: true });
+    });
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      closePanel(dialog);
+    });
+    dialog.querySelector("[data-close]")?.addEventListener("click", () => closePanel(dialog));
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) closePanel(dialog);
+    });
+  });
+
+  function activate(el: HTMLElement) {
+    if (el.dataset.href) location.href = el.dataset.href;
+    else if (el.dataset.open) openPanel(el.dataset.open, el.dataset.focus, el);
+  }
+
+  // ── Arrastre ───────────────────────────────────────────────
+  // Posiciones guardadas como fracción del tamaño de la mesa y por layout
+  // (horizontal o vertical): sobreviven a un resize o a girar el teléfono.
+  const vertical = window.matchMedia("(max-width: 760px), (orientation: portrait) and (max-width: 1100px)");
+  const layoutName = () => (vertical.matches ? "vertical" : "horizontal");
+  type Stored = { layout: string; pos: Record<string, { fx: number; fy: number }> };
+  const saved: Record<string, { x: number; y: number }> = {};
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORE) || "null") as Stored | null;
+    if (raw?.layout === layoutName() && raw.pos) {
+      for (const [id, p] of Object.entries(raw.pos)) saved[id] = { x: p.fx * desk.clientWidth, y: p.fy * desk.clientHeight };
+    }
+  } catch {
+    /* sin storage: arranca ordenada */
+  }
+  function save() {
+    const pos: Stored["pos"] = {};
+    items.forEach((el) => {
+      pos[el.dataset.item!] = { fx: +gsap.getProperty(el, "x") / desk.clientWidth, fy: +gsap.getProperty(el, "y") / desk.clientHeight };
+    });
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ layout: layoutName(), pos }));
+    } catch {
+      /* sin storage: no pasa nada */
+    }
+  }
+  const keepInside = () => items.forEach((el) => Draggable.get(el)?.applyBounds(desk));
+
+  let top = 10;
+  let justDragged = false;
+  const hint = document.querySelector<HTMLElement>("[data-hint]");
+
+  items.forEach((el) => {
+    const p = saved[el.dataset.item!];
+    if (p) gsap.set(el, { x: p.x, y: p.y });
+
+    Draggable.create(el, {
+      type: "x,y",
+      bounds: desk,
+      inertia: true,
+      edgeResistance: 0.85,
+      dragClickables: true,
+      minimumMovement: 6,
+      onPress() {
+        el.style.zIndex = String(++top);
+        gsap.to(el, { scale: 1.06, duration: 0.35, ease: "power3.out" });
+        el.classList.add("is-lifted");
+      },
+      onDrag() {
+        gsap.to(el, { rotation: gsap.utils.clamp(-12, 12, this.deltaX * 0.8), duration: 0.4, ease: "power3.out" });
+      },
+      onDragStart() {
+        justDragged = true;
+        hint?.classList.add("is-done");
+      },
+      onRelease() {
+        gsap.to(el, { scale: 1, rotation: 0, duration: 0.9, ease: "elastic.out(1, 0.5)" });
+        el.classList.remove("is-lifted");
+      },
+      onThrowComplete: save,
+      onDragEnd() {
+        save();
+        setTimeout(() => {
+          justDragged = false;
+        }, 60);
+      },
+    });
+
+    el.addEventListener("click", () => {
+      if (!justDragged) activate(el);
+    });
+  });
+
+  if (reduce) keepInside();
+
+  let size = { w: desk.clientWidth, h: desk.clientHeight, layout: layoutName() };
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      const layout = layoutName();
+      items.forEach((el) => {
+        if (layout !== size.layout) gsap.set(el, { x: 0, y: 0 });
+        else gsap.set(el, { x: (+gsap.getProperty(el, "x") * desk.clientWidth) / size.w, y: (+gsap.getProperty(el, "y") * desk.clientHeight) / size.h });
+      });
+      keepInside();
+      if (layout === size.layout) save();
+      size = { w: desk.clientWidth, h: desk.clientHeight, layout };
+    }, 150);
+  });
+
+  // Barra superior: fondo de papel cuando se deja la mesa.
+  const topbar = document.querySelector<HTMLElement>(".ms-top");
+  new IntersectionObserver(
+    ([entry]) => {
+      topbar?.classList.toggle("is-past-desk", !entry.isIntersecting);
+    },
+    { rootMargin: "-64px 0px 0px 0px" },
+  ).observe(desk);
+
+  document.querySelector("[data-tidy]")?.addEventListener("click", () => {
+    gsap.to(items, { x: 0, y: 0, rotation: 0, duration: reduce ? 0 : 0.9, ease: "power3.inOut", stagger: 0.04 });
+    try {
+      localStorage.removeItem(STORE);
+    } catch {
+      /* idem */
+    }
+  });
+
+  // Entrada: los objetos caen sobre la mesa.
+  if (!reduce) {
+    gsap.from(items, {
+      y: () => -window.innerHeight * 0.9,
+      rotation: () => gsap.utils.random(-30, 30),
+      opacity: 0,
+      duration: 1.1,
+      ease: "back.out(1.1)",
+      stagger: { each: 0.06, from: "random" },
+      clearProps: "opacity",
+      onComplete() {
+        items.forEach((el) => {
+          const p = saved[el.dataset.item!];
+          gsap.set(el, p ? { x: p.x, y: p.y } : { x: 0, y: 0 });
+        });
+        keepInside();
+      },
+    });
+  }
+</script>
+
+<style is:global>
+  body:has(.ms) {
+    margin: 0;
+    background: #2b2522;
+    overflow-x: clip;
+  }
+  html.panel-open {
+    overflow: hidden;
+  }
+  .ms {
+    --papel: #f6efe0;
+    --papel-2: #fffdf8;
+    --tinta: #2d2a29;
+    --tinta-2: #5c5753;
+    --rojo: #c93a19;
+    --amarillo: #ffd84d;
+    --madera: #4a3328;
+    --linea: #2d2a2926;
+    --sans: "Outfit", system-ui, sans-serif;
+    --mono: "Courier Prime", "Courier New", monospace;
+    --mano: "Caveat", "Segoe Print", cursive;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --mf-bg: #fff;
+    --mf-ink: var(--tinta);
+    --mf-ink-2: var(--tinta-2);
+    --mf-line: #2d2a2933;
+    --mf-accent: var(--rojo);
+    --mf-accent-ink: #fff;
+    --mf-radius: 4px;
+    color: var(--tinta);
+    font: 400 16px/1.55 var(--sans);
+  }
+  .ms *,
+  .ms *::before,
+  .ms *::after {
+    box-sizing: border-box;
+  }
+  .ms :where(h1, h2, h3, p, ul, ol) {
+    margin: 0;
+  }
+  .ms :where(ul, ol) {
+    padding: 0;
+    list-style: none;
+  }
+  .ms a {
+    color: inherit;
+  }
+  .ms :focus-visible {
+    outline: 3px solid var(--amarillo);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .ms-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  /* ── Barra ───────────────────────────────────────────────── */
+  .ms-top {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 100;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 clamp(16px, 3vw, 48px);
+    pointer-events: none;
+    transition: background-color 0.3s;
+  }
+  .ms-top > * {
+    pointer-events: auto;
+  }
+  .ms .ms-marca {
+    font: 700 28px/1 var(--mano);
+    color: var(--papel);
+    text-decoration: none;
+  }
+  .ms-acciones {
+    display: flex;
+    gap: 8px;
+  }
+  .ms .ms-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    font: 600 14px/1 var(--sans);
+    color: var(--papel);
+    text-decoration: none;
+    background: #2d2a2999;
+    border: 1px solid #f6efe066;
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+  }
+  .ms-top.is-past-desk {
+    background: #f6efe0eb;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 0 var(--linea);
+  }
+  .ms .ms-top.is-past-desk .ms-marca {
+    color: var(--tinta);
+  }
+  .ms .ms-top.is-past-desk .ms-btn {
+    color: var(--tinta);
+    background: none;
+    border-color: var(--linea);
+  }
+  .ms-top.is-past-desk [data-tidy] {
+    display: none;
+  }
+  html.panel-open .ms-top {
+    visibility: hidden;
+  }
+  @media (max-width: 767px) {
+    .ms-top {
+      padding-right: 196px; /* lugar para el selector de vista */
+    }
+    .ms-acciones {
+      display: none;
+    }
+  }
+
+  /* ── Mesa ────────────────────────────────────────────────── */
+  .desk {
+    position: relative;
+    height: 100svh;
+    min-height: 640px;
+    overflow: hidden;
+    touch-action: pan-y;
+    background:
+      radial-gradient(ellipse at 30% 20%, #6b4a3a 0%, transparent 60%),
+      repeating-linear-gradient(92deg, #4a3328 0 7px, #523a2e 7px 9px, #46302566 9px 22px),
+      var(--madera);
+  }
+  .desk::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* Luz de lámpara */
+  .desk::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse 70% 60% at 50% 40%, transparent 40%, #00000073 100%);
+  }
+
+  .item {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+    z-index: var(--z);
+    rotate: var(--r);
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--tinta);
+    text-align: left;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    filter: drop-shadow(0 10px 14px #00000059);
+    transition: filter 0.5s var(--ease);
+  }
+  .item img {
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+  .item:hover {
+    filter: drop-shadow(0 18px 24px #00000073);
+  }
+  .item.is-lifted {
+    cursor: grabbing;
+    filter: drop-shadow(0 32px 36px #00000080);
+  }
+  .item-tag {
+    position: absolute;
+    left: 50%;
+    bottom: -12px;
+    translate: -50% 0;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--rojo);
+    color: #fff;
+    font: 600 12px/16px var(--sans);
+    white-space: nowrap;
+  }
+
+  /* CV */
+  .o-cv {
+    display: grid;
+    gap: 6px;
+    padding: 9% 9% 14%;
+    background: var(--papel-2);
+    aspect-ratio: 1 / 1.33;
+    font-family: var(--mono);
+    font-size: clamp(9px, 0.8vw, 13px);
+    line-height: 1.3;
+    align-content: start;
+    position: relative;
+  }
+  .o-cv-nombre {
+    font: 700 clamp(16px, 1.5vw, 24px) / 1.05 var(--sans);
+    letter-spacing: -0.02em;
+  }
+  .o-cv-rol {
+    color: var(--tinta-2);
+  }
+  .o-cv-sep {
+    height: 2px;
+    margin: 4px 0;
+    background: var(--tinta);
+  }
+  .o-cv-fila {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .o-cv-fila i {
+    font-style: normal;
+    color: var(--tinta-2);
+  }
+  .o-cv-lineas {
+    height: 60px;
+    margin-top: 6px;
+    background: repeating-linear-gradient(180deg, #2d2a2926 0 2px, transparent 2px 10px);
+  }
+  .o-cv-sello {
+    position: absolute;
+    right: 8%;
+    bottom: 6%;
+    padding: 2px 10px;
+    border: 3px solid var(--rojo);
+    border-radius: 6px;
+    color: var(--rojo);
+    font: 700 clamp(16px, 1.6vw, 26px) / 1 var(--sans);
+    rotate: -12deg;
+    opacity: 0.85;
+  }
+
+  /* Polaroid */
+  .o-polaroid {
+    display: block;
+    padding: 7% 7% 0;
+    background: #fbfaf6;
+  }
+  .o-polaroid img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    filter: saturate(0.9) contrast(1.05);
+  }
+  .o-polaroid span {
+    display: block;
+    padding: 6% 0 9%;
+    text-align: center;
+    font: 700 clamp(18px, 1.6vw, 26px) / 1 var(--mano);
+  }
+
+  /* Capturas de proyectos */
+  .o-print {
+    position: relative;
+    display: block;
+    padding: 5% 5% 0;
+    background: #fff;
+  }
+  .o-print img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    object-position: top;
+  }
+  .o-print-pie {
+    display: block;
+    padding: 6% 2% 7%;
+    font: 700 clamp(15px, 1.25vw, 20px) / 1.1 var(--mano);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .o-cinta {
+    position: absolute;
+    left: 50%;
+    top: -10px;
+    width: 38%;
+    height: 22px;
+    translate: -50% 0;
+    rotate: -3deg;
+    background: #f3e7b8b3;
+    box-shadow: 0 1px 2px #0000001f;
+  }
+
+  /* Cuaderno */
+  .o-cuaderno {
+    display: grid;
+    gap: 2px;
+    padding: 10% 10% 12% 18%;
+    aspect-ratio: 1 / 1.3;
+    align-content: start;
+    background:
+      linear-gradient(90deg, transparent 13%, #e8806f 13% 13.6%, transparent 13.6%),
+      repeating-linear-gradient(180deg, #fffef9 0 23px, #b8cde4 23px 24px);
+    border-radius: 2px 8px 8px 2px;
+    box-shadow: inset 6px 0 0 #2d2a2914;
+    font: 600 clamp(15px, 1.25vw, 20px) / 24px var(--mano);
+  }
+  .o-cuaderno-t {
+    font-size: 1.5em;
+    color: var(--rojo);
+  }
+
+  /* Carnet */
+  .o-carnet {
+    display: block;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #fff;
+    font-size: clamp(9px, 0.75vw, 12px);
+    line-height: 1.25;
+  }
+  .o-carnet-top {
+    display: block;
+    padding: 6px 10px;
+    background: #1f3a6b;
+    color: #fff;
+    font: 700 clamp(12px, 1vw, 16px) / 1 var(--sans);
+    letter-spacing: 0.1em;
+  }
+  .o-carnet-body {
+    display: grid;
+    grid-template-columns: 34% 1fr;
+    gap: 8px;
+    padding: 9px 10px 12px;
+    align-items: center;
+  }
+  .o-carnet-body img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    filter: grayscale(1);
+  }
+  .o-carnet-body b {
+    display: block;
+    font-size: 1.15em;
+  }
+  .o-carnet-body small {
+    display: block;
+    margin-top: 4px;
+    color: var(--tinta-2);
+  }
+
+  /* Taza vista desde arriba */
+  .o-cafe {
+    position: relative;
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, #3b2418 0 52%, #5a3a28 54% 56%, #f4f1ea 58% 76%, #d9d4c8 78%);
+  }
+  .o-cafe::after {
+    content: "";
+    position: absolute;
+    right: -18%;
+    top: 38%;
+    width: 30%;
+    height: 24%;
+    border: 7px solid #ece8de;
+    border-left: 0;
+    border-radius: 0 50% 50% 0;
+  }
+  .o-cafe-vapor {
+    position: absolute;
+    inset: 30%;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff40, transparent 70%);
+    animation: vapor 4s ease-in-out infinite;
+  }
+  @keyframes vapor {
+    50% {
+      transform: scale(1.3) translate(4px, -6px);
+      opacity: 0.4;
+    }
+  }
+
+  /* Post-it */
+  .o-postit {
+    display: grid;
+    gap: 6px;
+    aspect-ratio: 1;
+    padding: 14%;
+    align-content: center;
+    background: linear-gradient(180deg, #ffe680, var(--amarillo));
+    font: 700 clamp(14px, 1.1vw, 18px) / 1.1 var(--mano);
+    overflow-wrap: anywhere;
+    clip-path: polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%);
+  }
+  .o-postit b {
+    font-size: 1.6em;
+    color: var(--rojo);
+  }
+  .o-postit small {
+    font: 400 clamp(10px, 0.75vw, 12px) / 1.2 var(--sans);
+  }
+
+  /* Decoración */
+  .deco-lapiz span {
+    display: block;
+    height: clamp(12px, 1vw, 16px);
+    border-radius: 2px;
+    background: linear-gradient(90deg, #2d2a29 0 4%, #f0c27b 4% 16%, #f2b630 16% 92%, #e88a8a 92%);
+    clip-path: polygon(0 50%, 16% 0, 100% 0, 100% 100%, 16% 100%);
+  }
+  .deco-clip span {
+    display: block;
+    aspect-ratio: 1 / 2.4;
+    border: 3px solid #b9bcc4;
+    border-radius: 999px;
+  }
+  .deco-mancha span {
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 6px solid #3b241873;
+    filter: blur(1px);
+    opacity: 0.7;
+  }
+  .item--decor {
+    filter: none;
+  }
+
+  .desk-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    translate: -50% 0;
+    z-index: 1;
+    font: 400 14px/20px var(--mono);
+    color: #f6efe0b3;
+    white-space: nowrap;
+  }
+  .desk-hint.is-done .hint-drag {
+    text-decoration: line-through;
+    text-decoration-color: var(--amarillo);
+  }
+  .ms .desk-down {
+    position: absolute;
+    left: clamp(16px, 3vw, 48px);
+    bottom: 12px;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid #f6efe066;
+    color: var(--papel);
+    text-decoration: none;
+  }
+
+  /* ── Paneles ─────────────────────────────────────────────── */
+  .panel {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--tinta);
+    display: none;
+    justify-content: flex-end;
+  }
+  .panel[open] {
+    display: flex;
+  }
+  .panel::backdrop {
+    background: #14121180;
+    backdrop-filter: blur(6px);
+  }
+  .panel-sheet {
+    position: relative;
+    width: min(640px, 100%);
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 64px 48px 80px;
+    background: var(--papel);
+    box-shadow: -24px 0 48px #0000004d;
+    animation: sheet-in 0.7s var(--ease) both;
+  }
+  .panel.is-closing .panel-sheet {
+    animation: sheet-out 0.32s var(--ease) both;
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes sheet-out {
+    to {
+      transform: translateX(100%);
+    }
+  }
+  .panel-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    z-index: 2;
+    margin: -32px -24px 0 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 0;
+    cursor: pointer;
+    background: var(--tinta);
+    transition: transform 0.6s var(--ease);
+  }
+  .panel-close:hover {
+    transform: rotate(90deg);
+  }
+  .panel-close span,
+  .panel-close span::after {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 23px;
+    height: 2px;
+    background: var(--papel);
+    rotate: 45deg;
+    border-radius: 2px;
+  }
+  .panel-close span::after {
+    content: "";
+    left: 0;
+    right: 0;
+    top: 0;
+    rotate: 90deg;
+  }
+
+  /* ── Contenido (panel y lista) ───────────────────────────── */
+  .mc {
+    display: grid;
+    gap: 16px;
+  }
+  .mc-k {
+    font: 700 13px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rojo);
+  }
+  .mc-t {
+    font: 700 clamp(34px, 5vw, 52px) / 1 var(--sans);
+    letter-spacing: -0.03em;
+  }
+  .mc-lead {
+    font-size: 19px;
+    font-weight: 500;
+  }
+  .mc-meta {
+    font: 700 12px/1.3 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--tinta-2);
+  }
+  .mc-exp {
+    display: grid;
+  }
+  .mc-exp li {
+    display: grid;
+    gap: 4px;
+    padding: 16px 0;
+    border-top: 1px solid var(--linea);
+  }
+  .mc h3 {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .mc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font: 400 13px/1 var(--mono);
+    color: var(--tinta-2);
+  }
+  .mc-tags-grandes span {
+    padding: 8px 12px;
+    font: 600 15px/1 var(--sans);
+    color: var(--tinta);
+    background: #fff;
+    border: 1px solid var(--linea);
+    border-radius: 999px;
+  }
+  .mc-grupo {
+    display: grid;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--linea);
+  }
+  .mc-foto {
+    width: min(260px, 70%);
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    rotate: -2deg;
+    border: 10px solid #fff;
+    box-shadow: 0 10px 24px #0000002e;
+  }
+  .mc-badge {
+    justify-self: start;
+    padding: 6px 12px;
+    font-weight: 600;
+    background: var(--amarillo);
+    border-radius: 999px;
+  }
+  .mc-proy {
+    display: grid;
+    gap: 32px;
+  }
+  .mc-proy article {
+    display: grid;
+    gap: 8px;
+    padding-top: 20px;
+    border-top: 1px solid var(--linea);
+    scroll-margin-top: 16px;
+  }
+  .mc-proy img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    object-position: top;
+    border: 1px solid var(--linea);
+  }
+  .mc-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 18px;
+    font-weight: 600;
+  }
+  .mc-links a {
+    display: inline-block;
+    padding-block: 10px;
+    text-decoration-color: var(--rojo);
+    text-underline-offset: 4px;
+  }
+
+  /* ── Lista ───────────────────────────────────────────────── */
+  .list {
+    background: var(--papel);
+    padding: 96px clamp(16px, 3vw, 48px);
+  }
+  .list-head,
+  .list-block {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .list-head {
+    display: grid;
+    gap: 12px;
+  }
+  .list-title {
+    font: 700 clamp(44px, 7vw, 84px) / 0.95 var(--sans);
+    letter-spacing: -0.04em;
+  }
+  .list-block {
+    padding: 56px 0;
+    border-bottom: 1px solid var(--linea);
+  }
+  .ms-pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 32px clamp(16px, 3vw, 48px) 96px;
+    background: var(--papel);
+    color: var(--tinta-2);
+    font-size: 14px;
+  }
+
+  @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
+    /* La mesa no ocupa toda la pantalla: abajo asoma la lista, una franja
+       libre donde deslizar el dedo baja la página. */
+    .desk {
+      height: 84svh;
+      min-height: 560px;
+      --u: min(1vw, 0.4svh);
+    }
+    .item {
+      left: var(--mx);
+      top: var(--my);
+      width: calc(var(--mw) * var(--u));
+      rotate: var(--mr);
+    }
+    .o-cv {
+      font-size: calc(2.1 * var(--u));
+      gap: calc(0.8 * var(--u));
+    }
+    .o-cv-nombre {
+      font-size: calc(3.6 * var(--u));
+    }
+    .o-cv-lineas {
+      height: calc(8 * var(--u));
+    }
+    .o-cv-sello {
+      font-size: calc(4 * var(--u));
+      border-width: 2px;
+    }
+    .o-polaroid span,
+    .o-print-pie {
+      font-size: calc(3.6 * var(--u));
+    }
+    .o-cuaderno {
+      font-size: calc(3.4 * var(--u));
+      line-height: calc(4.6 * var(--u));
+      background:
+        linear-gradient(90deg, transparent 13%, #e8806f 13% 13.6%, transparent 13.6%),
+        repeating-linear-gradient(180deg, #fffef9 0 calc(4.6 * var(--u) - 1px), #b8cde4 calc(4.6 * var(--u) - 1px) calc(4.6 * var(--u)));
+    }
+    .o-carnet {
+      font-size: calc(2 * var(--u));
+    }
+    .o-carnet-top {
+      font-size: calc(2.8 * var(--u));
+      padding: calc(1.2 * var(--u)) calc(2 * var(--u));
+    }
+    .o-postit {
+      font-size: calc(2.8 * var(--u));
+    }
+    .o-postit small {
+      font-size: calc(1.9 * var(--u));
+    }
+    .deco-lapiz span {
+      height: calc(2.6 * var(--u));
+    }
+  }
+  @media (max-width: 760px) {
+    .desk-hint {
+      font-size: 12px;
+      bottom: 12px;
+    }
+    .panel {
+      align-items: flex-end;
+    }
+    .panel-sheet {
+      height: auto;
+      max-height: 92svh;
+      border-radius: 16px 16px 0 0;
+      padding: 48px 24px 64px;
+      animation-name: sheet-up;
+    }
+    .panel.is-closing .panel-sheet {
+      animation-name: sheet-down;
+    }
+    .panel-close {
+      margin: -24px -12px 0 0;
+    }
+    @keyframes sheet-up {
+      from {
+        transform: translateY(100%);
+      }
+    }
+    @keyframes sheet-down {
+      to {
+        transform: translateY(100%);
+      }
+    }
+    .list {
+      padding: 72px 16px;
+    }
+  }
+  @media (max-height: 700px) and (min-width: 761px) {
+    .item {
+      width: calc(var(--w) * 0.85);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ms *,
+    .ms *::before,
+    .ms *::after {
+      transition-duration: 0.01ms !important;
+      animation: none !important;
+    }
+  }
+</style>

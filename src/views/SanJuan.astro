@@ -1,0 +1,765 @@
+---
+// Vista «San Juan»: el portfolio en el paisaje de San Juan, con física. Cerros,
+// viñedos y un viento Zonda que mueve todo: tarjetas colgadas que se hamacan,
+// polvo y tecnologías que se arrastran y salen volando (scripts/zonda.ts).
+// Colores de viña y cerro. Contenido de perfil.ts (vía i18n).
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import MensajeForm from "@/components/MensajeForm.astro";
+import Indice from "@/components/Indice.astro";
+import { habilidades } from "@/data/perfil";
+import { contenido, periodoL, ruta, t, type Lang } from "@/data/i18n";
+import { casos } from "@/data/casos";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const { perfil, experiencia, proyectos, estudios, AREAS } = contenido(lang);
+const base = import.meta.env.BASE_URL;
+const conCaso = new Set(casos.map((c) => c.id));
+const [nombre, apellido] = perfil.nombre.split(" ");
+const secciones = [
+  { id: "sj-cielo", nombre: t(lang, "El valle", "The valley") },
+  { id: "sj-quien", nombre: t(lang, "Quién soy", "About") },
+  { id: "sj-experiencia", nombre: t(lang, "Experiencia", "Experience") },
+  { id: "sj-proyectos", nombre: t(lang, "Proyectos", "Projects") },
+  { id: "sj-stack", nombre: "Stack" },
+  { id: "sj-contacto", nombre: t(lang, "Contacto", "Contact") },
+];
+const n = (i: number) => String(i).padStart(2, "0");
+---
+
+<ViewLayout
+  title={t(lang, "Ignacio Colomé · San Juan", "Ignacio Colomé · San Juan")}
+  description={t(
+    lang,
+    "El portfolio de Ignacio Colomé en el paisaje de San Juan: cerros, viñedos y un viento Zonda que mueve todo.",
+    "Ignacio Colomé's portfolio in the San Juan landscape: mountains, vineyards and a Zonda wind that blows everything around.",
+  )}
+  vista="sanjuan"
+  lang={lang}
+>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
+      rel="stylesheet"
+    />
+  </Fragment>
+
+  <div class="sj" data-sj data-lang={lang}>
+    <canvas class="sj-polvo" data-polvo aria-hidden="true"></canvas>
+    <Indice secciones={secciones} label={t(lang, "Secciones", "Sections")} />
+
+    <section id="sj-cielo" class="sj-hero">
+      <div class="sj-cielo" aria-hidden="true">
+        <span class="sj-sol"></span>
+        <svg class="sj-cerro sj-cerro-3" viewBox="0 0 1440 400" preserveAspectRatio="none">
+          <path d="M0 400V220l90-60 70 40 110-120 90 70 80-50 120 110 90-80 130 90 100-140 120 120 90-60 110 80 90-50 150 90v160Z" />
+        </svg>
+        <svg class="sj-cerro sj-cerro-2" viewBox="0 0 1440 400" preserveAspectRatio="none">
+          <path d="M0 400V270l120-70 100 50 140-110 120 100 110-40 150 90 120-110 160 120 130-70 120 60 150-50v260Z" />
+        </svg>
+        <svg class="sj-cerro sj-cerro-1" viewBox="0 0 1440 400" preserveAspectRatio="none">
+          <path d="M0 400V320l160-50 140 40 180-80 160 70 200-60 170 60 190-50 240 70v80Z" />
+        </svg>
+        <svg class="sj-vina" viewBox="0 0 1440 260" preserveAspectRatio="none">
+          {
+            Array.from({ length: 13 }, (_, i) => (
+              <path d={`M${720 + (i - 6) * 40} 0 L${720 + (i - 6) * 260} 260`} />
+            ))
+          }
+        </svg>
+        <span class="sj-bruma"></span>
+      </div>
+
+      <div class="sj-hero-in">
+        <p class="sj-k">{perfil.ubicacion} · 31°32′S 68°31′O</p>
+        <h1 aria-label={perfil.nombre}>
+          <span class="sj-linea" aria-hidden="true">{[...nombre].map((c) => <span data-letra>{c}</span>)}</span>
+          <span class="sj-linea" aria-hidden="true">{[...apellido].map((c) => <span data-letra>{c}</span>)}</span>
+        </h1>
+        <p class="sj-bajada">
+          {t(
+            lang,
+            "Analista de datos y desarrollador web. Desde el valle de Tulum: entre cerros, viñedos y un viento que cada tanto da vuelta todo.",
+            "Data analyst and web developer. From the Tulum valley: between mountains, vineyards and a wind that turns everything upside down every now and then.",
+          )}
+        </p>
+        <div class="sj-clima" aria-live="off">
+          <span>{t(lang, "Viento", "Wind")}: <b data-viento>{t(lang, "calma", "calm")}</b></span>
+          <span><b data-vel>6</b> km/h</span>
+          <span><b data-temp>24</b> °C</span>
+        </div>
+        <button type="button" class="sj-btn" data-zonda aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+          <span class="sj-btn-on">{t(lang, "Soplar el Zonda", "Blow the Zonda")}</span>
+          <span class="sj-btn-off">{t(lang, "Calmar el viento", "Calm the wind")}</span>
+        </button>
+      </div>
+    </section>
+
+    <main class="sj-tierra">
+      <section id="sj-quien" class="sj-sec sj-quien">
+        <figure class="sj-polaroid" data-hamaca="1.4">
+          <span class="sj-clip" aria-hidden="true"></span>
+          <img src={`${base}foto_perfil_recorte.jpg`} alt={perfil.nombre} loading="lazy" />
+          <figcaption>{perfil.alias} · {perfil.ubicacion}</figcaption>
+        </figure>
+        <div>
+          <p class="sj-k">{n(1)} · {t(lang, "Quién soy", "About")}</p>
+          <h2>{t(lang, "Datos de día, web de noche", "Data by day, web by night")}</h2>
+          <p class="sj-p">
+            {t(
+              lang,
+              "En Datyo mantengo un warehouse en SQL Server, migro sus transformaciones a dbt con tests y linaje y armo tableros en Power BI. Por fuera, diseño y programo sitios con Astro donde la interacción es parte del contenido.",
+              "At Datyo I maintain a SQL Server warehouse, migrate its transformations to dbt with tests and lineage and build Power BI dashboards. On the side, I design and code Astro sites where interaction is part of the content.",
+            )}
+          </p>
+          <p class="sj-badge"><i></i>{perfil.disponibilidad}</p>
+        </div>
+      </section>
+
+      <section id="sj-experiencia" class="sj-sec">
+        <p class="sj-k">{n(2)} · {t(lang, "Experiencia", "Experience")}</p>
+        <h2>{t(lang, "Colgado del alambre", "Hanging on the wire")}</h2>
+        <p class="sj-p sj-nota">{t(lang, "Como la uva en el parral: cada puesto, de su alambre.", "Like grapes on the trellis: each job hangs from its wire.")}</p>
+        <div class="sj-parral">
+          <span class="sj-alambre" aria-hidden="true"></span>
+          <ol>
+            {
+              experiencia.map((e, i) => (
+                <li class={`sj-colgada sj-${e.area}`} data-hamaca={String(1 + (i % 3) * 0.25)}>
+                  <span class="sj-clip" aria-hidden="true"></span>
+                  <p class="sj-fecha">{periodoL(lang, e.desde, e.hasta)}</p>
+                  <h3>{e.empresa}</h3>
+                  <p class="sj-rol">{e.rol}</p>
+                  <p class="sj-desc">{e.descripcion}</p>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </section>
+
+      <section id="sj-proyectos" class="sj-sec">
+        <p class="sj-k">{n(3)} · {t(lang, "Proyectos", "Projects")}</p>
+        <h2>{t(lang, "Cosecha 2026", "2026 vintage")}</h2>
+        <div class="sj-proy">
+          {
+            proyectos.map((p, i) => (
+              <article class="sj-cajon" data-hamaca={String(2.4 + i * 0.3)}>
+                {p.imagen && <img src={`${base}${p.imagen}`} alt="" loading="lazy" />}
+                <div class="sj-cajon-body">
+                  <p class="sj-etiqueta">
+                    {AREAS[p.area]} · {t(lang, "Cosecha", "Vintage")} {p.anio}
+                  </p>
+                  <h3>{p.titulo}</h3>
+                  <p class="sj-desc">{p.descripcion}</p>
+                  <p class="sj-links">
+                    {conCaso.has(p.id) && <a href={ruta(lang, `casos/${p.id}/`)}>{t(lang, "El caso", "Case study")} →</a>}
+                    {(p.extra ?? (p.sitio ? [{ label: t(lang, "Sitio", "Site"), href: p.sitio }] : [])).map((l) => (
+                      <a href={l.href} target="_blank" rel="noopener">
+                        {l.label} ↗
+                      </a>
+                    ))}
+                  </p>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section id="sj-stack" class="sj-sec">
+        <p class="sj-k">{n(4)} · Stack</p>
+        <h2>{t(lang, "Lo que el viento no se lleva", "What the wind can't take")}</h2>
+        <p class="sj-p sj-nota sj-solo-vivo">
+          {t(lang, "Arrastrá las tecnologías. Con el Zonda, vuelan.", "Drag the technologies around. With the Zonda, they fly.")}
+          <button type="button" class="sj-mini" data-zonda-2>{t(lang, "Soplar", "Blow")}</button>
+        </p>
+        <div class="sj-caja" data-caja>
+          {
+            habilidades.map((h) => (
+              <span class={`sj-chip sj-${h.area}`} data-chip>
+                {h.nombre}
+              </span>
+            ))
+          }
+        </div>
+        <p class="sj-p sj-est">
+          {estudios[0].titulo} · {estudios[0].institucion}. {t(lang, "Inglés avanzado (exámenes internacionales).", "Advanced English (international exams).")}
+        </p>
+      </section>
+
+      <section id="sj-contacto" class="sj-sec sj-contacto">
+        <div>
+          <p class="sj-k">{n(5)} · {t(lang, "Contacto", "Contact")}</p>
+          <h2>{t(lang, "¿Arrancamos algo?", "Shall we start something?")}</h2>
+          <p class="sj-p">
+            <a href={`mailto:${perfil.email}`}>{perfil.email}</a> ·{" "}
+            <a href={perfil.linkedin} target="_blank" rel="noopener">LinkedIn</a> ·{" "}
+            <a href={perfil.github} target="_blank" rel="noopener">GitHub</a>
+          </p>
+        </div>
+        <MensajeForm />
+      </section>
+
+      <footer class="sj-pie">
+        <p>{t(lang, "Hecho en San Juan con Astro y matter-js. El Zonda es real; este, simulado.", "Made in San Juan with Astro and matter-js. The Zonda is real; this one is simulated.")}</p>
+      </footer>
+    </main>
+  </div>
+</ViewLayout>
+
+<script>
+  import "@/scripts/zonda";
+  // el botón chico de la caja usa el mismo Zonda
+  document.querySelector("[data-zonda-2]")?.addEventListener("click", () => {
+    document.querySelector<HTMLButtonElement>("[data-zonda]")?.click();
+  });
+</script>
+
+<style is:global>
+  body:has(.sj) {
+    margin: 0;
+    background: #2a0f1c;
+    overflow-x: clip;
+  }
+  .sj {
+    --vino: #5b1a33;
+    --vino-2: #3a1626;
+    --vino-3: #2a0f1c;
+    --cerro: #c9774a;
+    --ocre: #f0b04f;
+    --arena: #f8ecd8;
+    --arena-2: #f8ecd8b3;
+    --hoja: #7f9a45;
+    --viento: 0;
+    --ix-ink: var(--arena);
+    --ix-ink-2: var(--arena-2);
+    --ix-accent: var(--ocre);
+    --ix-bg: var(--vino-2);
+    --ix-font: "Bricolage Grotesque", system-ui, sans-serif;
+    --mf-bg: #ffffff0f;
+    --mf-ink: var(--arena);
+    --mf-ink-2: var(--arena-2);
+    --mf-line: #f8ecd833;
+    --mf-accent: var(--ocre);
+    --mf-accent-ink: var(--vino-3);
+    --mf-radius: 14px;
+    position: relative;
+    color: var(--arena);
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+  .sj *,
+  .sj *::before,
+  .sj *::after {
+    box-sizing: border-box;
+  }
+  .sj :where(h1, h2, h3, p, ol, figure) {
+    margin: 0;
+  }
+  .sj a {
+    color: inherit;
+    text-decoration-color: color-mix(in srgb, var(--ocre) 60%, transparent);
+    text-underline-offset: 3px;
+  }
+  .sj a:hover {
+    color: var(--ocre);
+  }
+  .sj :focus-visible {
+    outline: 2px solid var(--ocre);
+    outline-offset: 3px;
+  }
+  .sj-polvo {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .sj-k {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ocre);
+  }
+
+  /* ── Cielo y cerros ──────────────────────────────────────── */
+  .sj-hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+  .sj-cielo {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #f6c98a 0%, #e98f62 38%, #a6434b 64%, var(--vino) 100%);
+  }
+  .sj-sol {
+    position: absolute;
+    right: 16%;
+    top: 18%;
+    width: clamp(90px, 12vw, 180px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff3d6 0 45%, #ffd58a 60%, #ffd58a00 72%);
+    filter: blur(calc(var(--viento) * 6px));
+    opacity: calc(1 - var(--viento) * 0.55);
+  }
+  .sj-cerro {
+    position: absolute;
+    left: -2%;
+    width: 104%;
+    transform: translateX(calc(var(--viento) * -10px));
+  }
+  .sj-cerro-3 {
+    bottom: 24%;
+    height: 34%;
+    fill: #b8665a;
+    opacity: 0.75;
+  }
+  .sj-cerro-2 {
+    bottom: 16%;
+    height: 30%;
+    fill: #8c3a45;
+  }
+  .sj-cerro-1 {
+    bottom: 12%;
+    height: 22%;
+    fill: #6a2238;
+  }
+  .sj-vina {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 15%;
+    background: linear-gradient(180deg, #5d2a2e, var(--vino));
+    stroke: var(--hoja);
+    stroke-width: 7;
+    stroke-dasharray: 2 9;
+    stroke-linecap: round;
+    opacity: 0.95;
+  }
+  .sj-bruma {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #e9b26a, #c9774a);
+    mix-blend-mode: multiply;
+    opacity: calc(var(--viento) * 0.75);
+  }
+  .sj-hero-in {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 96px 20px 18vh;
+  }
+  .sj-hero-in .sj-k {
+    color: var(--vino-2);
+  }
+  .sj h1 {
+    margin-top: 12px;
+    font-size: clamp(64px, 15vw, 210px);
+    font-weight: 800;
+    line-height: 0.82;
+    letter-spacing: -0.05em;
+    color: var(--vino-3);
+  }
+  .sj-linea {
+    display: block;
+  }
+  .sj-linea span {
+    display: inline-block;
+    will-change: transform;
+  }
+  .sj-linea + .sj-linea {
+    color: var(--arena);
+    text-shadow: 0 2px 0 #00000026;
+  }
+  .sj-bajada {
+    max-width: 46ch;
+    margin-top: 24px;
+    font-size: clamp(17px, 1.6vw, 21px);
+    color: var(--vino-3);
+    font-weight: 600;
+  }
+  .sj-clima {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-top: 24px;
+    font-size: 14px;
+    color: var(--vino-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .sj-clima b {
+    font-weight: 800;
+  }
+  .sj-btn,
+  .sj-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    margin-top: 20px;
+    padding: 0 22px;
+    font: inherit;
+    font-weight: 700;
+    color: var(--arena);
+    background: var(--vino-3);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 10px 24px #2a0f1c59;
+    transition: transform 0.2s;
+  }
+  .sj-btn:hover {
+    transform: translateY(-2px);
+  }
+  .sj-btn[aria-pressed="true"] {
+    background: var(--ocre);
+    color: var(--vino-3);
+  }
+  .sj-btn[aria-pressed="true"] svg {
+    animation: sj-sopla 0.6s ease-in-out infinite;
+  }
+  .sj-btn-off,
+  .sj-btn[aria-pressed="true"] .sj-btn-on {
+    display: none;
+  }
+  .sj-btn[aria-pressed="true"] .sj-btn-off {
+    display: inline;
+  }
+  @keyframes sj-sopla {
+    50% {
+      transform: translateX(4px);
+    }
+  }
+  .sj-mini {
+    min-height: 40px;
+    margin: 0 0 0 10px;
+    padding: 0 14px;
+    font-size: 14px;
+    background: var(--ocre);
+    color: var(--vino-3);
+  }
+  .sj:not(.sj-vivo) .sj-btn,
+  .sj:not(.sj-vivo) .sj-clima,
+  .sj:not(.sj-vivo) .sj-solo-vivo {
+    display: none;
+  }
+
+  /* ── Tierra: secciones ───────────────────────────────────── */
+  .sj-tierra {
+    background:
+      radial-gradient(ellipse at 20% 0%, #5b1a3380, transparent 50%),
+      linear-gradient(180deg, var(--vino) 0, var(--vino-2) 30%, var(--vino-3));
+  }
+  .sj-sec {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(64px, 10vw, 120px) 20px;
+    scroll-margin-top: 20px;
+  }
+  .sj h2 {
+    margin-top: 8px;
+    font-size: clamp(40px, 6vw, 80px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+  }
+  .sj-p {
+    max-width: 60ch;
+    margin-top: 16px;
+    color: var(--arena-2);
+  }
+  .sj-nota {
+    font-style: italic;
+  }
+  .sj-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 8px 14px;
+    font-size: 14px;
+    border: 1px solid var(--mf-line);
+    border-radius: 999px;
+  }
+  .sj-badge i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--hoja);
+    box-shadow: 0 0 0 4px #7f9a4533;
+  }
+
+  /* Péndulos: giran alrededor del clip (--a lo mueve zonda.ts) */
+  [data-hamaca] {
+    transform-origin: 50% -14px;
+    transform: rotate(var(--a, 0deg));
+    will-change: transform;
+  }
+  .sj-clip {
+    position: absolute;
+    left: 50%;
+    top: -18px;
+    width: 14px;
+    height: 30px;
+    margin-left: -7px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #c9a46a, #e7c98f 50%, #b58a4f);
+    box-shadow: 0 2px 4px #0000004d;
+  }
+
+  .sj-quien {
+    display: grid;
+    gap: 48px;
+    align-items: center;
+  }
+  @media (min-width: 900px) {
+    .sj-quien {
+      grid-template-columns: 340px 1fr;
+      gap: 80px;
+    }
+  }
+  .sj-polaroid {
+    position: relative;
+    width: min(320px, 80%);
+    margin: 20px auto 0;
+    padding: 14px 14px 52px;
+    background: #fbf6ec;
+    color: var(--vino-3);
+    box-shadow: 0 24px 48px #00000059;
+  }
+  .sj-polaroid img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    filter: sepia(0.25) saturate(1.1);
+  }
+  .sj-polaroid figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 14px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .sj-parral {
+    position: relative;
+    margin-top: 48px;
+  }
+  .sj-alambre {
+    position: absolute;
+    left: -20px;
+    right: -20px;
+    top: 0;
+    height: 2px;
+    background: #d9c3a0;
+    box-shadow: 0 1px 0 #0000004d;
+  }
+  .sj-parral ol {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 56px 20px;
+    padding: 30px 0 0;
+  }
+  .sj-colgada {
+    position: relative;
+    padding: 22px 18px 20px;
+    border-radius: 6px;
+    background: var(--arena);
+    color: var(--vino-3);
+    box-shadow: 0 18px 36px #00000059;
+  }
+  .sj-colgada::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 6px;
+    border-radius: 6px 6px 0 0;
+    background: var(--c, var(--vino));
+  }
+  .sj-datos {
+    --c: var(--vino);
+  }
+  .sj-web {
+    --c: var(--cerro);
+  }
+  .sj-qa {
+    --c: var(--hoja);
+  }
+  .sj-soporte {
+    --c: #8a7d6e;
+  }
+  .sj-fecha {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .sj-colgada h3 {
+    margin-top: 6px;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .sj-rol {
+    font-weight: 600;
+  }
+  .sj-desc {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    opacity: 0.85;
+  }
+
+  .sj-proy {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 32px;
+    margin-top: 48px;
+  }
+  .sj-cajon {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #4a1a2b;
+    border: 1px solid #f8ecd81f;
+    box-shadow: 0 20px 40px #0000004d;
+    transform-origin: 50% 0;
+  }
+  .sj-cajon img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    object-position: top;
+  }
+  .sj-cajon-body {
+    padding: 18px 20px 20px;
+  }
+  .sj-etiqueta {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--vino-3);
+    background: var(--ocre);
+    border-radius: 3px;
+  }
+  .sj-cajon h3 {
+    margin-top: 12px;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .sj-cajon .sj-desc {
+    color: var(--arena-2);
+    opacity: 1;
+  }
+  .sj-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 16px;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+  .sj-links a {
+    display: inline-block;
+    padding-block: 8px;
+  }
+
+  .sj-caja {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 32px;
+    padding: 20px;
+    border: 2px dashed #f8ecd83d;
+    border-radius: 18px;
+    background: #00000026;
+  }
+  .sj-caja-viva {
+    height: clamp(360px, 52vh, 480px);
+    padding: 0;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+  }
+  .sj-caja-viva.sj-agarrando {
+    cursor: grabbing;
+  }
+  .sj-chip {
+    display: inline-block;
+    padding: 10px 18px;
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+    border-radius: 999px;
+    background: var(--c, var(--vino));
+    color: var(--arena);
+    user-select: none;
+  }
+  .sj-chip.sj-web {
+    color: var(--vino-3);
+  }
+  .sj-chip.sj-qa {
+    color: var(--vino-3);
+  }
+  .sj-chip.sj-general {
+    --c: var(--arena);
+    color: var(--vino-3);
+  }
+  .sj-chip.sj-datos {
+    --c: #8c2f4b;
+  }
+  .sj-caja-viva .sj-chip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-200px, -200px);
+    will-change: transform;
+  }
+  .sj-est {
+    margin-top: 24px;
+  }
+
+  .sj-contacto {
+    display: grid;
+    gap: 40px;
+  }
+  @media (min-width: 900px) {
+    .sj-contacto {
+      grid-template-columns: 1fr 420px;
+      align-items: start;
+    }
+  }
+  .sj-pie {
+    padding: 32px 20px 96px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--arena-2);
+  }
+</style>

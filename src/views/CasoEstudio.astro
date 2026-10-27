@@ -1,0 +1,400 @@
+---
+// Caso de estudio de un proyecto: problema, decisiones y resultado
+// (data/casos.ts). La tesis suma el diagrama del proceso de datos y la red de
+// trasbordos, sin resultados hasta la defensa. Diseño sobrio, de lectura.
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import Indice from "@/components/Indice.astro";
+import { contenido, ruta, t, type Lang } from "@/data/i18n";
+import { casos } from "@/data/casos";
+
+interface Props {
+  id: string;
+  lang: Lang;
+}
+const { id, lang } = Astro.props;
+const { proyectos, AREAS } = contenido(lang);
+const base = import.meta.env.BASE_URL;
+const p = proyectos.find((x) => x.id === id)!;
+const caso = casos.find((c) => c.id === id)!;
+const i = casos.indexOf(caso);
+const sig = proyectos.find((x) => x.id === casos[(i + 1) % casos.length].id)!;
+const links = [
+  ...(p.extra ?? (p.sitio ? [{ label: t(lang, "Sitio", "Site"), href: p.sitio }] : [])),
+  ...(p.codigo ? [{ label: t(lang, "Código", "Code"), href: p.codigo }] : []),
+];
+const secciones = [
+  { id: "c-inicio", nombre: p.titulo.split(":")[0] },
+  { id: "c-problema", nombre: t(lang, "Problema", "Problem") },
+  ...(caso.proceso ? [{ id: "c-proceso", nombre: t(lang, "Proceso", "Process") }] : []),
+  { id: "c-decisiones", nombre: t(lang, "Decisiones", "Decisions") },
+  { id: "c-resultado", nombre: t(lang, "Resultado", "Outcome") },
+];
+// Diagrama del proceso: cajas en zigzag de dos columnas, unidas por flechas.
+const pasos = caso.proceso?.map((x) => x[lang]) ?? [];
+const BW = 230;
+const BH = 56;
+const GAP = 34;
+const svgH = pasos.length * (BH + GAP) - GAP + 8;
+---
+
+<ViewLayout
+  title={`${p.titulo} · ${t(lang, "Caso de estudio", "Case study")} · Ignacio Colomé`}
+  description={caso.problema[lang]}
+  vista={`caso-${id}`}
+  tema="editorial"
+  og={p.imagen ?? undefined}
+  lang={lang}
+>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter+Tight:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </Fragment>
+
+  <div class="cs">
+    <header class="cs-top">
+      <a href={ruta(lang, "")}>← {t(lang, "Portfolio", "Portfolio")}</a>
+      <span>{t(lang, "Caso de estudio", "Case study")} {String(i + 1).padStart(2, "0")} / {String(casos.length).padStart(2, "0")}</span>
+    </header>
+    <Indice secciones={secciones} label={t(lang, "Secciones", "Sections")} />
+
+    <main>
+      <section id="c-inicio" class="cs-inicio">
+        <p class="cs-k">{AREAS[p.area]} · {p.anio} · {p.estado}</p>
+        <h1>{p.titulo}</h1>
+        <p class="cs-stack">{p.stack.join(" · ")}</p>
+        {
+          links.length > 0 && (
+            <p class="cs-links">
+              {links.map((l) => (
+                <a href={l.href} target="_blank" rel="noopener">
+                  {l.label} ↗
+                </a>
+              ))}
+            </p>
+          )
+        }
+        {
+          p.imagen && (
+            <figure>
+              <img src={`${base}${p.imagen}`} alt="" loading="eager" />
+              {id === "tesis_sube" && <figcaption>{t(lang, "Red de trasbordos entre líneas.", "Transfer network between lines.")}</figcaption>}
+            </figure>
+          )
+        }
+      </section>
+
+      <section id="c-problema" class="cs-sec">
+        <h2><span>01</span>{t(lang, "Problema", "Problem")}</h2>
+        <p class="cs-lead">{caso.problema[lang]}</p>
+      </section>
+
+      {
+        caso.proceso && (
+          <section id="c-proceso" class="cs-sec">
+            <h2>
+              <span>02</span>
+              {t(lang, "Proceso de datos", "Data process")}
+            </h2>
+            <svg class="cs-diag" viewBox={`0 0 ${BW * 2 + 60} ${svgH}`} role="img" aria-label={pasos.join(" → ")}>
+              <defs>
+                <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0 0 10 5 0 10z" />
+                </marker>
+              </defs>
+              {pasos.map((txt, k) => {
+                const x = k % 2 === 0 ? 4 : BW + 56;
+                const y = 4 + k * (BH + GAP);
+                const nx = (k + 1) % 2 === 0 ? 4 : BW + 56;
+                return (
+                  <g>
+                    <rect x={x} y={y} width={BW} height={BH} rx="4" class:list={{ "cs-diag-fin": k === pasos.length - 1 }} />
+                    <text x={x + 14} y={y + BH / 2 + 5}>
+                      <tspan class="cs-diag-n">{String(k + 1).padStart(2, "0")}</tspan> {txt}
+                    </text>
+                    {k < pasos.length - 1 && (
+                      <path
+                        d={`M${x + BW / 2} ${y + BH} C ${x + BW / 2} ${y + BH + GAP / 2}, ${nx + BW / 2} ${y + BH + GAP / 2}, ${nx + BW / 2} ${y + BH + GAP - 2}`}
+                        marker-end="url(#flecha)"
+                      />
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          </section>
+        )
+      }
+
+      <section id="c-decisiones" class="cs-sec">
+        <h2><span>{caso.proceso ? "03" : "02"}</span>{t(lang, "Decisiones", "Decisions")}</h2>
+        <ol class="cs-dec">
+          {
+            caso.decisiones.map((d) => (
+              <li>
+                <h3>{d.titulo[lang]}</h3>
+                <p set:html={d.detalle[lang].replace(/`([^`]+)`/g, "<code>$1</code>")} />
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section id="c-resultado" class="cs-sec">
+        <h2><span>{caso.proceso ? "04" : "03"}</span>{t(lang, "Resultado", "Outcome")}</h2>
+        <ul class="cs-res">
+          {caso.resultado.map((r) => <li>{r[lang]}</li>)}
+        </ul>
+        {caso.aprendizaje && <p class="cs-nota" set:html={caso.aprendizaje[lang].replace(/`([^`]+)`/g, "<code>$1</code>")} />}
+      </section>
+
+      <nav class="cs-sig" aria-label={t(lang, "Siguiente caso", "Next case")}>
+        <a href={ruta(lang, `casos/${sig.id}/`)}>
+          <small>{t(lang, "Siguiente caso", "Next case")}</small>
+          <strong>{sig.titulo} →</strong>
+        </a>
+      </nav>
+    </main>
+  </div>
+</ViewLayout>
+
+<style is:global>
+  body:has(.cs) {
+    margin: 0;
+    background: #fbfaf7;
+  }
+  .cs {
+    --ink: #141414;
+    --ink-2: #5a5a57;
+    --line: #1414141f;
+    --rojo: #b3261e;
+    --serif: "Newsreader", Georgia, serif;
+    --sans: "Inter Tight", system-ui, sans-serif;
+    --ix-ink: var(--ink);
+    --ix-ink-2: var(--ink-2);
+    --ix-accent: var(--rojo);
+    --ix-bg: #fbfaf7;
+    --ix-font: var(--sans);
+    color: var(--ink);
+    font: 400 19px/1.6 var(--serif);
+  }
+  .cs *,
+  .cs *::before,
+  .cs *::after {
+    box-sizing: border-box;
+  }
+  .cs :where(h1, h2, h3, p, ol, ul, figure) {
+    margin: 0;
+  }
+  .cs a {
+    color: inherit;
+    text-decoration-color: color-mix(in srgb, var(--rojo) 55%, transparent);
+    text-underline-offset: 3px;
+  }
+  .cs a:hover {
+    color: var(--rojo);
+  }
+  .cs :focus-visible {
+    outline: 2px solid var(--rojo);
+    outline-offset: 3px;
+  }
+  .cs code {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.85em;
+    padding: 1px 5px;
+    background: #1414140d;
+  }
+  .cs main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 20px 96px;
+  }
+  .cs-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 20px;
+    font: 500 14px/1.4 var(--sans);
+    color: var(--ink-2);
+  }
+  @media (max-width: 767px) {
+    .cs-top {
+      padding-right: 200px;
+    }
+    .cs-top span {
+      display: none;
+    }
+  }
+  .cs-k {
+    font: 600 12px/1.4 var(--sans);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rojo);
+  }
+  .cs-inicio {
+    padding: 48px 0 40px;
+  }
+  .cs h1 {
+    margin-top: 12px;
+    font-size: clamp(40px, 6.5vw, 72px);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .cs-stack {
+    margin-top: 16px;
+    font: 400 15px/1.5 var(--sans);
+    color: var(--ink-2);
+  }
+  .cs-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+    margin-top: 8px;
+    font: 500 15px/1 var(--sans);
+  }
+  .cs-links a {
+    display: inline-block;
+    padding-block: 12px;
+  }
+  .cs-inicio figure {
+    margin-top: 32px;
+  }
+  .cs-inicio img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+  }
+  .cs-inicio figcaption {
+    margin-top: 8px;
+    font: 400 13px/1.4 var(--sans);
+    color: var(--ink-2);
+  }
+  .cs-sec {
+    padding: 48px 0;
+    border-top: 1px solid var(--ink);
+    scroll-margin-top: 16px;
+  }
+  .cs h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 20px;
+    font-size: clamp(30px, 4vw, 42px);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+  .cs h2 span {
+    font: 600 13px/1 var(--sans);
+    color: var(--rojo);
+  }
+  .cs-lead {
+    font-size: clamp(21px, 2.4vw, 25px);
+    line-height: 1.45;
+  }
+  .cs-dec {
+    list-style: none;
+    padding: 0;
+    counter-reset: d;
+  }
+  .cs-dec li {
+    counter-increment: d;
+    position: relative;
+    padding: 18px 0 18px 48px;
+    border-top: 1px solid var(--line);
+  }
+  .cs-dec li::before {
+    content: counter(d, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 24px;
+    font: 600 13px/1 var(--sans);
+    color: var(--rojo);
+  }
+  .cs-dec h3 {
+    font-size: 23px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .cs-dec p {
+    margin-top: 4px;
+  }
+  .cs-res {
+    padding-left: 1.1em;
+  }
+  .cs-res li + li {
+    margin-top: 8px;
+  }
+  .cs-res li::marker {
+    color: var(--rojo);
+  }
+  .cs-nota {
+    margin-top: 24px;
+    padding: 16px 20px;
+    font-style: italic;
+    background: #14141408;
+    border-left: 3px solid var(--rojo);
+  }
+  .cs-diag {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    margin: 0 auto;
+    font: 500 15px var(--sans);
+  }
+  .cs-diag rect {
+    fill: #fff;
+    stroke: var(--ink);
+    stroke-width: 1.2;
+  }
+  .cs-diag rect.cs-diag-fin {
+    fill: #b3261e12;
+    stroke: var(--rojo);
+  }
+  .cs-diag text {
+    fill: var(--ink);
+  }
+  .cs-diag .cs-diag-n {
+    fill: var(--rojo);
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .cs-diag path {
+    fill: none;
+    stroke: var(--ink-2);
+    stroke-width: 1.2;
+  }
+  .cs-diag marker path {
+    fill: var(--ink-2);
+    stroke: none;
+  }
+  .cs-sig {
+    margin-top: 32px;
+    border-top: 3px double var(--ink);
+  }
+  .cs-sig a {
+    display: grid;
+    gap: 4px;
+    padding: 24px 0;
+    text-decoration: none;
+  }
+  .cs-sig small {
+    font: 600 12px/1 var(--sans);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .cs-sig strong {
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 500;
+    line-height: 1.2;
+  }
+</style>

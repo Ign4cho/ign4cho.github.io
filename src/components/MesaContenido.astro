@@ -1,0 +1,170 @@
+---
+// Contenido de cada objeto de la vista Mesa. Se usa dos veces: dentro del panel
+// (<dialog>) que abre el objeto y en la versión en lista al pie de la página.
+import MensajeForm from "@/components/MensajeForm.astro";
+import { habilidades } from "@/data/perfil";
+import { contenido, periodoL, ruta, t, type Lang } from "@/data/i18n";
+import { casos } from "@/data/casos";
+
+export type SeccionMesa = "cv" | "sobre" | "proyectos" | "stack" | "formacion" | "contacto";
+
+interface Props {
+  section: SeccionMesa;
+  lang: Lang;
+  /** Prefijo para ids únicos (panel vs lista). */
+  scope: string;
+}
+
+const { section, lang, scope } = Astro.props;
+const { perfil, experiencia, proyectos, estudios, charlas, AREAS } = contenido(lang);
+const base = import.meta.env.BASE_URL;
+const conCaso = new Set(casos.map((c) => c.id));
+const id = `${scope}-${section}-t`;
+const grupos = (["datos", "web", "qa", "general"] as const).map((a) => ({
+  nombre: a === "general" ? "General" : AREAS[a],
+  items: habilidades.filter((h) => h.area === a),
+}));
+---
+
+{
+  section === "cv" && (
+    <div class="mc" aria-labelledby={id}>
+      <p class="mc-k">{t(lang, "La hoja", "The sheet")}</p>
+      <h2 class="mc-t" id={id}>{t(lang, "Experiencia", "Experience")}</h2>
+      <ol class="mc-exp">
+        {experiencia.map((e) => (
+          <li>
+            <p class="mc-meta">{periodoL(lang, e.desde, e.hasta)}</p>
+            <h3>
+              {e.rol} · {e.empresa}
+            </h3>
+            <p>{e.descripcion}</p>
+            <p class="mc-tags">{e.tags.map((x) => <span>#{x}</span>)}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+{
+  section === "sobre" && (
+    <div class="mc" aria-labelledby={id}>
+      <p class="mc-k">{t(lang, "La polaroid", "The polaroid")}</p>
+      <h2 class="mc-t" id={id}>{perfil.nombre}</h2>
+      <img class="mc-foto" src={`${base}foto_perfil_recorte.jpg`} alt={perfil.nombre} loading="lazy" />
+      <p class="mc-lead">
+        {perfil.rol}. {perfil.ubicacion}.
+      </p>
+      <p>
+        {t(
+          lang,
+          "En Datyo mantengo un warehouse en SQL Server, migro sus transformaciones a dbt con tests y linaje y armo tableros en Power BI. Por fuera, diseño y programo sitios con Astro donde la interacción es parte del contenido. Esta mesa es uno de ellos.",
+          "At Datyo I maintain a SQL Server warehouse, migrate its transformations to dbt with tests and lineage and build Power BI dashboards. On the side, I design and code Astro sites where interaction is part of the content. This desk is one of them.",
+        )}
+      </p>
+      <p class="mc-badge">{perfil.disponibilidad}</p>
+    </div>
+  )
+}
+
+{
+  section === "proyectos" && (
+    <div class="mc" aria-labelledby={id}>
+      <p class="mc-k">{t(lang, "Las capturas", "The prints")}</p>
+      <h2 class="mc-t" id={id}>{t(lang, "Proyectos", "Projects")}</h2>
+      <div class="mc-proy">
+        {proyectos.map((p) => (
+          <article id={`${scope}-p-${p.id}`}>
+            {p.imagen && <img src={`${base}${p.imagen}`} alt="" loading="lazy" />}
+            <p class="mc-meta">
+              {AREAS[p.area]} · {p.anio} · {p.estado}
+            </p>
+            <h3>{p.titulo}</h3>
+            <p>{p.descripcion}</p>
+            <p class="mc-tags">{p.stack.map((x) => <span>#{x}</span>)}</p>
+            <p class="mc-links">
+              {conCaso.has(p.id) && <a href={ruta(lang, `casos/${p.id}/`)}>{t(lang, "Caso de estudio", "Case study")} →</a>}
+              {(p.extra ?? (p.sitio ? [{ label: t(lang, "Sitio", "Site"), href: p.sitio }] : [])).map((l) => (
+                <a href={l.href} target="_blank" rel="noopener">
+                  {l.label} ↗
+                </a>
+              ))}
+              {p.codigo && (
+                <a href={p.codigo} target="_blank" rel="noopener">
+                  {t(lang, "Código", "Code")} ↗
+                </a>
+              )}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+{
+  section === "stack" && (
+    <div class="mc" aria-labelledby={id}>
+      <p class="mc-k">{t(lang, "El cuaderno", "The notebook")}</p>
+      <h2 class="mc-t" id={id}>Stack</h2>
+      {grupos.map((g) => (
+        <div class="mc-grupo">
+          <h3>{g.nombre}</h3>
+          <p class="mc-tags mc-tags-grandes">{g.items.map((h) => <span>{h.nombre}</span>)}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+{
+  section === "formacion" && (
+    <div class="mc" aria-labelledby={id}>
+      <p class="mc-k">{t(lang, "El carnet", "The ID card")}</p>
+      <h2 class="mc-t" id={id}>{t(lang, "Formación y charlas", "Education and talks")}</h2>
+      <ul class="mc-exp">
+        {estudios.map((e) => (
+          <li>
+            <p class="mc-meta">{t(lang, "Desde", "Since")} {e.desde}</p>
+            <h3>{e.titulo}</h3>
+            <p>{e.institucion}</p>
+          </li>
+        ))}
+        {charlas.map((c) => (
+          <li>
+            <p class="mc-meta">
+              {t(lang, "Charla", "Talk")} · {c.fecha}
+            </p>
+            <h3>{c.titulo}</h3>
+            <p>
+              {c.evento}. {c.lugar}. {t(lang, "Con", "With")} {c.coautor}.
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+{
+  section === "contacto" && (
+    <div class="mc" aria-labelledby={id}>
+      <p class="mc-k">{t(lang, "El café", "The coffee")}</p>
+      <h2 class="mc-t" id={id}>{t(lang, "¿Tomamos un café?", "Coffee?")}</h2>
+      <p class="mc-lead">
+        {t(lang, "Contame en qué andás. Respondo por mail.", "Tell me what you're working on. I reply by email.")}
+      </p>
+      <p class="mc-links">
+        <a href={`mailto:${perfil.email}`}>{perfil.email}</a>
+        <a href={perfil.linkedin} target="_blank" rel="noopener">
+          LinkedIn ↗
+        </a>
+        <a href={perfil.github} target="_blank" rel="noopener">
+          GitHub ↗
+        </a>
+      </p>
+      <MensajeForm />
+    </div>
+  )
+}

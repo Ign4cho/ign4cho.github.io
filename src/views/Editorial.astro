@@ -1,0 +1,684 @@
+---
+// Vista «Editorial»: el portfolio como una revista sobria y muy legible, pensada
+// para quien selecciona personal. Capítulos numerados, márgenes con fechas y
+// datos, y una versión para imprimir. Contenido de perfil.ts (vía i18n).
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import MensajeForm from "@/components/MensajeForm.astro";
+import Indice from "@/components/Indice.astro";
+import { habilidades, meses } from "@/data/perfil";
+import { contenido, periodoL, mesesL, ruta, t, type Lang } from "@/data/i18n";
+import { casos } from "@/data/casos";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const { perfil, experiencia, proyectos, estudios, charlas, AREAS } = contenido(lang);
+const base = import.meta.env.BASE_URL;
+const fecha = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "es-AR", { month: "long", year: "numeric" }).format(new Date());
+const conCaso = new Set(casos.map((c) => c.id));
+const totalMeses = experiencia.reduce((s, e) => s + meses(e.desde, e.hasta), 0);
+const grupos = (["datos", "web", "qa", "general"] as const).map((a) => ({
+  nombre: a === "general" ? t(lang, "General", "General") : AREAS[a],
+  items: habilidades.filter((h) => h.area === a).map((h) => h.nombre),
+}));
+
+const secciones = [
+  { id: "ed-portada", nombre: t(lang, "Portada", "Cover") },
+  { id: "ed-perfil", nombre: t(lang, "Perfil", "Profile") },
+  { id: "ed-experiencia", nombre: t(lang, "Experiencia", "Experience") },
+  { id: "ed-proyectos", nombre: t(lang, "Proyectos", "Projects") },
+  { id: "ed-habilidades", nombre: t(lang, "Habilidades", "Skills") },
+  { id: "ed-formacion", nombre: t(lang, "Formación", "Education") },
+  { id: "ed-contacto", nombre: t(lang, "Contacto", "Contact") },
+];
+const cap = (i: number) => `${String(i).padStart(2, "0")} / ${String(secciones.length - 1).padStart(2, "0")}`;
+---
+
+<ViewLayout
+  title={t(lang, "Ignacio Colomé · Edición editorial", "Ignacio Colomé · Editorial edition")}
+  description={t(
+    lang,
+    "El portfolio de Ignacio Colomé como una revista: perfil, experiencia y proyectos para leer de corrido.",
+    "Ignacio Colomé's portfolio as a magazine: profile, experience and projects to read straight through.",
+  )}
+  vista="editorial"
+  lang={lang}
+>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter+Tight:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </Fragment>
+
+  <div class="ed">
+    <header class="ed-mast">
+      <a href="#ed-portada" class="ed-logo">Colomé</a>
+      <p>{t(lang, "Edición n.º 1", "Issue no. 1")} · <span class="ed-cap">{fecha}</span></p>
+      <button type="button" class="ed-print" data-imprimir>{t(lang, "Imprimir / PDF", "Print / PDF")}</button>
+    </header>
+
+    <Indice secciones={secciones} label={t(lang, "Capítulos", "Chapters")} />
+
+    <main>
+      <section id="ed-portada" class="ed-portada">
+        <p class="ed-kicker">{perfil.disponibilidad}</p>
+        <h1>{t(lang, "Datos", "Data")} <em>{t(lang, "y", "&")}</em> Web</h1>
+        <div class="ed-portada-grid">
+          <p class="ed-deck">
+            {t(
+              lang,
+              `${perfil.nombre} modela warehouses con dbt y arma tableros en Power BI. También diseña y programa sitios web donde la interacción es parte del contenido.`,
+              `${perfil.nombre} models warehouses with dbt and builds Power BI dashboards. He also designs and codes websites where interaction is part of the content.`,
+            )}
+          </p>
+          <figure class="ed-foto">
+            <img src={`${base}foto_perfil_recorte.jpg`} alt={perfil.nombre} width="480" height="600" loading="eager" />
+            <figcaption>{perfil.nombre} · {perfil.ubicacion}</figcaption>
+          </figure>
+        </div>
+        <p class="ed-byline">
+          {t(lang, "Por", "By")} <strong>{perfil.nombre}</strong> · {perfil.rol}
+        </p>
+      </section>
+
+      <section id="ed-perfil" class="ed-cap-sec">
+        <header class="ed-h"><span>{cap(1)}</span><h2>{t(lang, "Perfil", "Profile")}</h2></header>
+        <div class="ed-cols">
+          <div class="ed-texto">
+            <p class="ed-capitular">
+              {t(
+                lang,
+                "Trabajo en la frontera entre los datos y la web. En Datyo mantengo el warehouse de la cuenta principal y migro sus transformaciones a dbt, con tests y linaje. Por fuera, hago sitios con Astro donde el diseño y la programación se piensan juntos.",
+                "I work where data meets the web. At Datyo I maintain the main account's warehouse and migrate its transformations to dbt, with tests and lineage. On the side, I build Astro sites where design and code are thought out together.",
+              )}
+            </p>
+            <p>
+              {t(
+                lang,
+                "Vengo de pasantías en calidad de software y Business Intelligence, así que me importa que lo que entrego se pueda probar y medir. Estoy terminando la Licenciatura en Sistemas de Información en la UNSJ con un trabajo final sobre cadenas de Markov y datos de transporte público.",
+                "I come from internships in software quality and Business Intelligence, so I care that what I ship can be tested and measured. I'm finishing my degree in Information Systems at UNSJ with a thesis on Markov chains and public transport data.",
+              )}
+            </p>
+            <blockquote>
+              {t(lang, "«Que lo que entrego se pueda probar y medir.»", "“What I ship should be testable and measurable.”")}
+            </blockquote>
+          </div>
+          <aside class="ed-ficha" aria-label={t(lang, "Datos rápidos", "Quick facts")}>
+            <dl>
+              <div><dt>{t(lang, "Rol", "Role")}</dt><dd>{perfil.rol}</dd></div>
+              <div><dt>{t(lang, "Base", "Based in")}</dt><dd>{perfil.ubicacion}</dd></div>
+              <div><dt>{t(lang, "Experiencia", "Experience")}</dt><dd>{mesesL(lang, totalMeses)} · {experiencia.length} {t(lang, "puestos", "roles")}</dd></div>
+              <div><dt>{t(lang, "Inglés", "English")}</dt><dd>{t(lang, "Avanzado, exámenes internacionales", "Advanced, international exams")}</dd></div>
+              <div><dt>{t(lang, "Disponibilidad", "Availability")}</dt><dd>{perfil.disponibilidad}</dd></div>
+              <div><dt>Email</dt><dd><a href={`mailto:${perfil.email}`}>{perfil.email}</a></dd></div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <section id="ed-experiencia" class="ed-cap-sec">
+        <header class="ed-h"><span>{cap(2)}</span><h2>{t(lang, "Experiencia", "Experience")}</h2></header>
+        <ol class="ed-exp">
+          {
+            experiencia.map((e) => (
+              <li>
+                <p class="ed-margen">
+                  {periodoL(lang, e.desde, e.hasta)}
+                  <span>{mesesL(lang, meses(e.desde, e.hasta))}</span>
+                </p>
+                <div>
+                  <h3>
+                    {e.rol} <span>· {e.empresa}</span>
+                  </h3>
+                  <p>{e.descripcion}</p>
+                  <p class="ed-tags">{e.tags.join(" · ")}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section id="ed-proyectos" class="ed-cap-sec">
+        <header class="ed-h"><span>{cap(3)}</span><h2>{t(lang, "Proyectos", "Projects")}</h2></header>
+        <div class="ed-proy">
+          {
+            proyectos.map((p, i) => (
+              <article class:list={["ed-art", { "ed-art-grande": i === 0 }]}>
+                {p.imagen && (
+                  <figure>
+                    <img src={`${base}${p.imagen}`} alt="" loading="lazy" />
+                  </figure>
+                )}
+                <p class="ed-kicker">
+                  {AREAS[p.area]} · {p.anio} · {p.estado}
+                </p>
+                <h3>{p.titulo}</h3>
+                <p>{p.descripcion}</p>
+                <p class="ed-tags">{p.stack.join(" · ")}</p>
+                <p class="ed-links">
+                  {conCaso.has(p.id) && <a href={ruta(lang, `casos/${p.id}/`)}>{t(lang, "Leer el caso", "Read the case study")} →</a>}
+                  {(p.extra ?? (p.sitio ? [{ label: t(lang, "Sitio", "Site"), href: p.sitio }] : [])).map((l) => (
+                    <a href={l.href} target="_blank" rel="noopener">
+                      {l.label} ↗
+                    </a>
+                  ))}
+                  {p.codigo && (
+                    <a href={p.codigo} target="_blank" rel="noopener">
+                      {t(lang, "Código", "Code")} ↗
+                    </a>
+                  )}
+                </p>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section id="ed-habilidades" class="ed-cap-sec">
+        <header class="ed-h"><span>{cap(4)}</span><h2>{t(lang, "Habilidades", "Skills")}</h2></header>
+        <dl class="ed-hab">
+          {
+            grupos.map((g) => (
+              <div>
+                <dt>{g.nombre}</dt>
+                <dd>{g.items.join(", ")}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </section>
+
+      <section id="ed-formacion" class="ed-cap-sec">
+        <header class="ed-h"><span>{cap(5)}</span><h2>{t(lang, "Formación y charlas", "Education and talks")}</h2></header>
+        <ul class="ed-est">
+          {
+            estudios.map((e) => (
+              <li>
+                <p class="ed-margen">{e.desde}</p>
+                <div>
+                  <h3>{e.titulo}</h3>
+                  <p>{e.institucion}</p>
+                </div>
+              </li>
+            ))
+          }
+          {
+            charlas.map((c) => (
+              <li>
+                <p class="ed-margen">{c.fecha.slice(0, 4)}</p>
+                <div>
+                  <h3>{c.titulo}</h3>
+                  <p>
+                    {c.evento} · {c.lugar}. {t(lang, "Con", "With")} {c.coautor}.
+                  </p>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section id="ed-contacto" class="ed-cap-sec ed-contacto">
+        <header class="ed-h"><span>{cap(6)}</span><h2>{t(lang, "Contacto", "Contact")}</h2></header>
+        <div class="ed-cols">
+          <div class="ed-texto">
+            <p class="ed-grande">{t(lang, "¿Hablamos de un puesto o de un proyecto?", "Shall we talk about a role or a project?")}</p>
+            <p>
+              <a href={`mailto:${perfil.email}`}>{perfil.email}</a><br />
+              <a href={perfil.linkedin} target="_blank" rel="noopener">LinkedIn</a> ·{" "}
+              <a href={perfil.github} target="_blank" rel="noopener">GitHub</a>
+            </p>
+          </div>
+          <MensajeForm />
+        </div>
+      </section>
+    </main>
+
+    <footer class="ed-pie">
+      <p>
+        {t(lang, "Compuesto en Newsreader e Inter Tight. Hecho con Astro.", "Set in Newsreader and Inter Tight. Built with Astro.")}
+      </p>
+      <p>© {new Date().getFullYear()} {perfil.nombre}</p>
+    </footer>
+  </div>
+</ViewLayout>
+
+<script>
+  document.querySelector("[data-imprimir]")?.addEventListener("click", () => window.print());
+</script>
+
+<style is:global>
+  body:has(.ed) {
+    margin: 0;
+    background: #fbfaf7;
+  }
+  .ed {
+    --bg: #fbfaf7;
+    --ink: #141414;
+    --ink-2: #5a5a57;
+    --line: #1414141f;
+    --rojo: #b3261e;
+    --serif: "Newsreader", Georgia, serif;
+    --sans: "Inter Tight", system-ui, sans-serif;
+    --ix-ink: var(--ink);
+    --ix-ink-2: var(--ink-2);
+    --ix-accent: var(--rojo);
+    --ix-bg: var(--bg);
+    --ix-font: var(--sans);
+    --mf-bg: #fff;
+    --mf-ink: var(--ink);
+    --mf-ink-2: var(--ink-2);
+    --mf-line: #14141433;
+    --mf-accent: var(--ink);
+    --mf-accent-ink: var(--bg);
+    --mf-radius: 0;
+    color: var(--ink);
+    background: var(--bg);
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.6;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+  }
+  .ed *,
+  .ed *::before,
+  .ed *::after {
+    box-sizing: border-box;
+  }
+  .ed :where(h1, h2, h3, p, ol, ul, dl, dd, figure, blockquote) {
+    margin: 0;
+  }
+  .ed a {
+    color: inherit;
+    text-decoration-color: color-mix(in srgb, var(--rojo) 55%, transparent);
+    text-underline-offset: 3px;
+  }
+  .ed a:hover {
+    color: var(--rojo);
+  }
+  .ed :focus-visible {
+    outline: 2px solid var(--rojo);
+    outline-offset: 3px;
+  }
+  .ed main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .ed-mast {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .ed-logo {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .ed-cap {
+    display: inline-block;
+  }
+  .ed-cap::first-letter {
+    text-transform: uppercase;
+  }
+  .ed-print {
+    min-height: 40px;
+    padding: 0 14px;
+    font: inherit;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .ed-print:hover {
+    border-color: var(--ink);
+  }
+  @media (max-width: 767px) {
+    .ed-mast {
+      padding-right: 200px; /* lugar para el selector de vista */
+    }
+    .ed-mast p,
+    .ed-print {
+      display: none;
+    }
+  }
+
+  .ed-kicker {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rojo);
+  }
+  .ed-portada {
+    padding: clamp(40px, 8vw, 96px) 0 48px;
+    border-bottom: 3px double var(--ink);
+  }
+  .ed-portada h1 {
+    margin-top: 12px;
+    font-size: clamp(64px, 14vw, 184px);
+    font-weight: 500;
+    line-height: 0.88;
+    letter-spacing: -0.045em;
+  }
+  .ed-portada h1 em {
+    font-weight: 400;
+    color: var(--rojo);
+  }
+  .ed-portada-grid {
+    display: grid;
+    gap: 32px;
+    margin-top: 40px;
+    align-items: end;
+  }
+  @media (min-width: 768px) {
+    .ed-portada-grid {
+      grid-template-columns: 1.3fr 1fr;
+      gap: 56px;
+      align-items: start;
+    }
+  }
+  .ed-deck {
+    font-size: clamp(22px, 2.6vw, 30px);
+    line-height: 1.35;
+    font-style: italic;
+  }
+  .ed-foto img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.05);
+  }
+  .ed-foto figcaption,
+  .ed-byline {
+    margin-top: 10px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .ed-byline {
+    margin-top: 32px;
+  }
+
+  .ed-cap-sec {
+    padding: 56px 0;
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 64px;
+  }
+  .ed-h {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .ed-h span {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--rojo);
+    font-variant-numeric: tabular-nums;
+  }
+  .ed-h h2 {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .ed-cols {
+    display: grid;
+    gap: 40px;
+  }
+  @media (min-width: 900px) {
+    .ed-cols {
+      grid-template-columns: 1fr 320px;
+      gap: 64px;
+    }
+  }
+  .ed-texto {
+    max-width: 64ch;
+  }
+  .ed-texto > * + * {
+    margin-top: 1em;
+  }
+  .ed-capitular::first-letter {
+    float: left;
+    margin: 6px 10px 0 0;
+    font-size: 4.4em;
+    line-height: 0.8;
+    font-weight: 600;
+    color: var(--rojo);
+  }
+  .ed blockquote {
+    padding: 8px 0 8px 20px;
+    border-left: 3px solid var(--rojo);
+    font-size: 26px;
+    line-height: 1.3;
+    font-style: italic;
+  }
+  .ed-ficha dl {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .ed-ficha div {
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .ed-ficha dt {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .ed-ficha dd {
+    overflow-wrap: anywhere;
+  }
+
+  .ed-exp,
+  .ed-est {
+    list-style: none;
+    padding: 0;
+  }
+  .ed-exp li,
+  .ed-est li {
+    display: grid;
+    gap: 6px 32px;
+    padding: 20px 0;
+    border-top: 1px solid var(--line);
+  }
+  @media (min-width: 768px) {
+    .ed-exp li,
+    .ed-est li {
+      grid-template-columns: 200px 1fr;
+    }
+  }
+  .ed-margen {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .ed-margen span {
+    display: block;
+    font-size: 12px;
+  }
+  .ed-exp h3,
+  .ed-est h3 {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .ed-exp h3 span {
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+  .ed-exp p,
+  .ed-est p {
+    max-width: 64ch;
+    margin-top: 6px;
+  }
+  .ed-tags {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  .ed-proy {
+    display: grid;
+    gap: 48px 40px;
+  }
+  @media (min-width: 768px) {
+    .ed-proy {
+      grid-template-columns: 1fr 1fr;
+    }
+    .ed-art-grande {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      column-gap: 40px;
+    }
+    .ed-art-grande figure {
+      grid-row: span 6;
+    }
+  }
+  .ed-art figure {
+    margin-bottom: 16px;
+    border: 1px solid var(--line);
+  }
+  .ed-art img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+  }
+  .ed-art h3 {
+    margin-top: 6px;
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  .ed-art > p:not(.ed-kicker) {
+    margin-top: 10px;
+  }
+  .ed-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .ed-links a {
+    display: inline-block;
+    padding-block: 8px;
+  }
+
+  .ed-hab div {
+    display: grid;
+    gap: 4px 32px;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+  }
+  @media (min-width: 768px) {
+    .ed-hab div {
+      grid-template-columns: 200px 1fr;
+    }
+  }
+  .ed-hab dt {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .ed-hab dd {
+    font-size: 22px;
+  }
+
+  .ed-grande {
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .ed-contacto .mf {
+    font-family: var(--sans);
+    font-size: 15px;
+  }
+
+  .ed-pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 20px 96px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  @media print {
+    body:has(.ed) {
+      background: #fff;
+    }
+    .ed {
+      font-size: 11pt;
+      background: #fff;
+    }
+    .ed-mast,
+    .ix,
+    .vs-wrap,
+    .ed-contacto .mf,
+    .ed-art figure,
+    .ed-foto {
+      display: none !important;
+    }
+    .ed-portada h1 {
+      font-size: 54pt;
+    }
+    .ed-cap-sec {
+      padding: 18pt 0;
+      break-inside: avoid-page;
+    }
+    .ed-exp li,
+    .ed-art {
+      break-inside: avoid;
+    }
+    .ed a[href^="http"]::after {
+      content: " (" attr(href) ")";
+      font-size: 8pt;
+      color: #555;
+    }
+  }
+</style>

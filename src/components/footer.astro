@@ -1,4 +1,6 @@
 ---
+import { langDe, t } from "@/data/i18n";
+const lang = langDe(Astro.url);
 const currentYear = new Date().getFullYear();
 const base = import.meta.env.BASE_URL;
 ---
@@ -46,19 +48,19 @@ const base = import.meta.env.BASE_URL;
           {
             [
               {
-                desc: "Construido con",
+                desc: t(lang, "Construido con", "Built with"),
                 name: "Astro",
                 icon: `${base}svg/astro.svg`,
                 alt: "Astro Logo",
               },
               {
-                desc: "Estilizado con",
+                desc: t(lang, "Estilizado con", "Styled with"),
                 name: "TailwindCSS",
                 icon: `${base}svg/tailwindcss.svg`,
                 alt: "TailwindCSS Logo",
               },
               {
-                desc: "Desplegado en",
+                desc: t(lang, "Desplegado en", "Deployed on"),
                 name: "GitHub Pages",
                 icon: `${base}svg/git.svg`,
                 alt: "GitHub Logo",
@@ -102,7 +104,7 @@ const base = import.meta.env.BASE_URL;
         <span class="block sm:inline"
           >Copyright © {currentYear} <a href="https://github.com/Ign4cho"
             >Ignacio Colomé</a
-          >. Todos los derechos reservados.</span
+          >. {t(lang, "Todos los derechos reservados.", "All rights reserved.")}</span
         >
       </p>
     </div>

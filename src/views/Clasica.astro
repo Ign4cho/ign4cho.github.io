@@ -1,0 +1,45 @@
+---
+// Vista «Clásica»: oscura, para leer de corrido. Sus secciones son los
+// componentes de components/ (cada uno toma el idioma de la ruta).
+import Layout from "@/layouts/Layout.astro";
+import Nav from "@/components/nav.astro";
+import Home from "@/components/home.astro";
+import Experience from "@/components/experience.astro";
+import Projects from "@/components/projects.astro";
+import Contact from "@/components/contact.astro";
+import Footer from "@/components/footer.astro";
+import ViewSwitcher from "@/components/ViewSwitcher.astro";
+import Indice from "@/components/Indice.astro";
+import { t, type Lang } from "@/data/i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const secciones = [
+  { id: "home", nombre: t(lang, "Inicio", "Home") },
+  { id: "experience", nombre: t(lang, "Experiencia", "Experience") },
+  { id: "projects", nombre: t(lang, "Proyectos", "Projects") },
+  { id: "contact", nombre: t(lang, "Contacto", "Contact") },
+];
+---
+
+<Layout title={t(lang, "Nacho Colomé - Portfolio", "Nacho Colomé - Portfolio")} lang={lang}>
+  <Nav />
+  <Indice secciones={secciones} label={t(lang, "Secciones", "Sections")} />
+  <Home />
+  <Experience />
+  <Projects />
+  <Contact />
+  <Footer />
+  <ViewSwitcher actual="clasica" lang={lang} />
+</Layout>
+
+<style is:global>
+  .ix {
+    --ix-ink: var(--white);
+    --ix-ink-2: var(--white-icon);
+    --ix-accent: var(--sec);
+    --ix-bg: var(--background);
+  }
+</style>

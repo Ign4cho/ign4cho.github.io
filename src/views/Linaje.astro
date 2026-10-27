@@ -1,0 +1,960 @@
+---
+// Vista «Linaje dbt»: la carrera como grafo de modelos. Fuentes
+// (formación y experiencias) → staging (habilidades base) → intermedios → marts
+// (trabajos y proyectos) → exposures (licenciatura, Datyo, Elargot, portfolio).
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import MensajeForm from "@/components/MensajeForm.astro";
+import { contenido, periodoL, ruta, t, type Lang } from "@/data/i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const { perfil, experiencia, proyectos, vistas } = contenido(lang);
+const periodo = (desde: string, hasta: string | null) => periodoL(lang, desde, hasta);
+
+type Tipo = "source" | "model" | "exposure";
+interface Nodo {
+  id: string;
+  tipo: Tipo;
+  capa: number; // columna del grafo
+  titulo: string;
+  descripcion: string;
+  deps: string[];
+  tags: string[];
+  columnas: [string, string][];
+  links?: [string, string][];
+}
+
+const exp = (id: string) => experiencia.find((e) => e.id === id)!;
+const proj = (id: string) => proyectos.find((p) => p.id === id)!;
+const linksProj = (id: string): [string, string][] => {
+  const p = proj(id);
+  const sitios: [string, string][] = p.extra ? p.extra.map((l) => [l.label, l.href]) : p.sitio ? [[t(lang, "Sitio", "Site"), p.sitio]] : [];
+  return [...sitios, ...(p.codigo ? [[t(lang, "Código", "Code"), p.codigo] as [string, string]] : [])];
+};
+
+const nodos: Nodo[] = [
+  // ── Fuentes ─────────────────────────────────────────
+  {
+    id: "unsj.sistemas",
+    tipo: "source",
+    capa: 0,
+    titulo: t(lang, "UNSJ · Sistemas de Información", "UNSJ · Information Systems"),
+    descripcion: t(lang, "Licenciado y Técnico Universitario en Sistemas de Información por la Universidad Nacional de San Juan.", "Bachelor's degree and University Technician in Information Systems, Universidad Nacional de San Juan."),
+    deps: [],
+    tags: ["formacion"],
+    columnas: [[t(lang, "Desde", "Since"), String(perfil.inicio)], [t(lang, "Títulos", "Degrees"), t(lang, "Licenciatura · Técnico Universitario", "Bachelor's degree · University Technician")]],
+  },
+  {
+    id: "examen.ingles",
+    tipo: "source",
+    capa: 0,
+    titulo: t(lang, "Exámenes internacionales · Inglés", "International exams · English"),
+    descripcion: t(lang, "Exámenes internacionales de inglés: First Language English (2018) y English as a Second Language (2017).", "International English exams: First Language English (2018) and English as a Second Language (2017)."),
+    deps: [],
+    tags: ["formacion"],
+    columnas: [[t(lang, "Exámenes", "Exams"), "First Language English 2018 · English as a Second Language 2017"]],
+  },
+  {
+    id: "datyo.trabajo",
+    tipo: "source",
+    capa: 0,
+    titulo: `Datyo · ${exp("datyo").rol}`,
+    descripcion: t(lang, "Consultora de datos donde trabajo desde septiembre de 2026: warehouse en SQL Server, migración a dbt, API de Humand y tableros en Power BI.", "Data consultancy where I've worked since September 2026: SQL Server warehouse, migration to dbt, Humand API and Power BI dashboards."),
+    deps: [],
+    tags: ["datos", "actual"],
+    columnas: [[t(lang, "Período", "Period"), periodo(exp("datyo").desde, exp("datyo").hasta)], [t(lang, "Herramientas", "Tools"), exp("datyo").tags.join(", ")]],
+  },
+  ...["unsj_computos", "infocontrol", "wes"].map((id): Nodo => {
+    const e = exp(id);
+    return {
+      id: `pasantias.${id}`,
+      tipo: "source",
+      capa: 0,
+      titulo: `${e.empresa} · ${e.rol}`,
+      descripcion: e.descripcion,
+      deps: [],
+      tags: [e.area, "pasantia"],
+      columnas: [[t(lang, "Período", "Period"), periodo(e.desde, e.hasta)], [t(lang, "Herramientas", "Tools"), e.tags.join(", ")]],
+    };
+  }),
+  // ── Staging ─────────────────────────────────────────
+  {
+    id: "stg_sql",
+    tipo: "model",
+    capa: 1,
+    titulo: "SQL",
+    descripcion: t(lang, "Consultas, modelado relacional y bases de datos: de la facultad a los flujos de datos de Infocontrol.", "Queries, relational modeling and databases: from university to Infocontrol's data flows."),
+    deps: ["unsj.sistemas", "pasantias.infocontrol"],
+    tags: ["datos"],
+    columnas: [[t(lang, "Motores", "Engines"), "SQL Server, PostgreSQL, MySQL"]],
+  },
+  {
+    id: "stg_bi",
+    tipo: "model",
+    capa: 1,
+    titulo: "Business Intelligence",
+    descripcion: t(lang, "Definición de KPIs y tableros: Looker Studio en Infocontrol, Power BI en Datyo.", "KPI definition and dashboards: Looker Studio at Infocontrol, Power BI at Datyo."),
+    deps: ["pasantias.infocontrol"],
+    tags: ["datos"],
+    columnas: [[t(lang, "Herramientas", "Tools"), "Power BI, Looker Studio"]],
+  },
+  {
+    id: "stg_python",
+    tipo: "model",
+    capa: 1,
+    titulo: t(lang, "Python para datos", "Python for data"),
+    descripcion: t(lang, "Limpieza, tipado y análisis exploratorio con pandas, numpy y matplotlib.", "Cleaning, typing and exploratory analysis with pandas, numpy and matplotlib."),
+    deps: ["unsj.sistemas"],
+    tags: ["datos"],
+    columnas: [[t(lang, "Librerías", "Libraries"), "pandas, numpy, matplotlib"]],
+  },
+  {
+    id: "stg_qa",
+    tipo: "model",
+    capa: 1,
+    titulo: t(lang, "Calidad de software", "Software quality"),
+    descripcion: t(lang, "Pruebas funcionales de caja negra, casos de prueba, validación de APIs y matrices de trazabilidad.", "Black-box functional testing, test cases, API validation and traceability matrices."),
+    deps: ["unsj.sistemas", "pasantias.wes"],
+    tags: ["qa"],
+    columnas: [[t(lang, "Herramientas", "Tools"), "Postman"]],
+  },
+  {
+    id: "stg_web",
+    tipo: "model",
+    capa: 1,
+    titulo: t(lang, "Fundamentos web", "Web fundamentals"),
+    descripcion: t(lang, "HTML, CSS, JavaScript y TypeScript; Astro y Tailwind como base de los sitios.", "HTML, CSS, JavaScript and TypeScript; Astro and Tailwind as the base of my sites."),
+    deps: ["unsj.sistemas"],
+    tags: ["web"],
+    columnas: [["Stack", "Astro, Tailwind CSS, Alpine.js, TypeScript"]],
+  },
+  {
+    id: "stg_soporte",
+    tipo: "model",
+    capa: 1,
+    titulo: t(lang, "Soporte e infraestructura", "Support and infrastructure"),
+    descripcion: t(lang, "Mantenimiento de equipos y redes en el Centro de Cómputos del Rectorado.", "Computer and network maintenance at the Rectorate's Computing Center."),
+    deps: ["pasantias.unsj_computos"],
+    tags: ["soporte"],
+    columnas: [[t(lang, "Temas", "Topics"), t(lang, "Hardware, redes", "Hardware, networks")]],
+  },
+  {
+    id: "stg_ingles",
+    tipo: "model",
+    capa: 1,
+    titulo: t(lang, "Inglés avanzado", "Advanced English"),
+    descripcion: t(lang, "Inglés avanzado para leer documentación técnica, hacer cursos y trabajar con equipos en inglés.", "Advanced English to read technical documentation, take courses and work with English-speaking teams."),
+    deps: ["examen.ingles"],
+    tags: ["formacion"],
+    columnas: [[t(lang, "Nivel", "Level"), t(lang, "Avanzado", "Advanced")]],
+  },
+  // ── Intermedios ─────────────────────────────────────
+  {
+    id: "int_modelado_datos",
+    tipo: "model",
+    capa: 2,
+    titulo: t(lang, "Modelado de datos con dbt", "Data modeling with dbt"),
+    descripcion: t(lang, "Warehouse por capas, transformaciones versionadas, tests, documentación y linaje (como este grafo).", "Layered warehouse, versioned transformations, tests, documentation and lineage (like this graph)."),
+    deps: ["stg_sql", "stg_python", "datyo.trabajo"],
+    tags: ["datos"],
+    columnas: [[t(lang, "Herramientas", "Tools"), "dbt, SQL Server"]],
+  },
+  {
+    id: "int_frontend_interactivo",
+    tipo: "model",
+    capa: 2,
+    titulo: t(lang, "Frontend interactivo", "Interactive frontend"),
+    descripcion: t(lang, "Animación, 3D y física en el navegador: scroll que despliega un pliego, objetos arrastrables, WebGPU.", "Animation, 3D and physics in the browser: a zine that unfolds on scroll, draggable objects, WebGPU."),
+    deps: ["stg_web"],
+    tags: ["web"],
+    columnas: [[t(lang, "Librerías", "Libraries"), "GSAP, Three.js, Lenis"]],
+  },
+  {
+    id: "int_backend",
+    tipo: "model",
+    capa: 2,
+    titulo: t(lang, "Backend y pagos", "Backend and payments"),
+    descripcion: t(lang, "APIs con Node.js y Fastify sobre PostgreSQL, checkout con MercadoPago y eventos server-side.", "APIs with Node.js and Fastify on PostgreSQL, MercadoPago checkout and server-side events."),
+    deps: ["stg_web", "stg_sql"],
+    tags: ["web"],
+    columnas: [["Stack", "Node.js, Fastify, PostgreSQL"]],
+  },
+  // ── Marts ───────────────────────────────────────────
+  {
+    id: "fct_datyo",
+    tipo: "model",
+    capa: 3,
+    titulo: `Datyo · ${exp("datyo").rol}`,
+    descripcion: exp("datyo").descripcion,
+    deps: ["int_modelado_datos", "stg_bi", "stg_python", "datyo.trabajo"],
+    tags: ["datos", "actual"],
+    columnas: [[t(lang, "Período", "Period"), periodo(exp("datyo").desde, exp("datyo").hasta)], ["Stack", exp("datyo").tags.join(", ")]],
+  },
+  {
+    id: "fct_tesis_sube",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("tesis_sube").titulo,
+    descripcion: proj("tesis_sube").descripcion,
+    deps: ["stg_python", "stg_sql"],
+    tags: ["datos", "tesis"],
+    columnas: [[t(lang, "Año", "Year"), String(proj("tesis_sube").anio)], [t(lang, "Estado", "Status"), proj("tesis_sube").estado], ["Stack", proj("tesis_sube").stack.join(", ")]],
+  },
+  {
+    id: "fct_espacioamine",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("espacioamine").titulo,
+    descripcion: proj("espacioamine").descripcion,
+    deps: ["stg_web", "stg_qa"],
+    tags: ["web", "freelance"],
+    columnas: [[t(lang, "Año", "Year"), String(proj("espacioamine").anio)], ["Stack", proj("espacioamine").stack.join(", ")]],
+    links: linksProj("espacioamine"),
+  },
+  {
+    id: "fct_experimentos_amine",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("experimentos_amine").titulo,
+    descripcion: proj("experimentos_amine").descripcion,
+    deps: ["int_frontend_interactivo", "fct_espacioamine"],
+    tags: ["web", "freelance"],
+    columnas: [[t(lang, "Año", "Year"), String(proj("experimentos_amine").anio)], ["Stack", proj("experimentos_amine").stack.join(", ")]],
+    links: linksProj("experimentos_amine"),
+  },
+  {
+    id: "fct_tienda_online",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("tienda_online").titulo,
+    descripcion: proj("tienda_online").descripcion,
+    deps: ["int_backend", "stg_web"],
+    tags: ["web"],
+    columnas: [[t(lang, "Año", "Year"), String(proj("tienda_online").anio)], ["Stack", proj("tienda_online").stack.join(", ")]],
+    links: linksProj("tienda_online"),
+  },
+  {
+    id: "dim_perfil",
+    tipo: "model",
+    capa: 3,
+    titulo: perfil.nombre,
+    descripcion: `${perfil.rol}. ${perfil.ubicacion}.`,
+    deps: ["stg_ingles", "stg_soporte", "stg_qa"],
+    tags: ["perfil"],
+    columnas: [[t(lang, "Ubicación", "Location"), perfil.ubicacion], [t(lang, "Disponibilidad", "Availability"), perfil.disponibilidad], ["Email", perfil.email]],
+    links: [["LinkedIn", perfil.linkedin], ["GitHub", perfil.github]],
+  },
+  // ── Exposures ───────────────────────────────────────
+  {
+    id: "licenciatura",
+    tipo: "exposure",
+    capa: 4,
+    titulo: t(lang, "Licenciatura en Sistemas de Información", "Bachelor's degree in Information Systems"),
+    descripcion: t(lang, "Trabajo Final de la Licenciatura (UNSJ): el modelo de trasbordos SUBE con cadenas de Markov.", "Bachelor's thesis (UNSJ): the SUBE transfer model with Markov chains."),
+    deps: ["fct_tesis_sube"],
+    tags: ["datos", "tesis"],
+    columnas: [[t(lang, "Institución", "Institution"), "Universidad Nacional de San Juan"], [t(lang, "Tipo", "Type"), "analysis"]],
+  },
+  {
+    id: "trabajo_datyo",
+    tipo: "exposure",
+    capa: 4,
+    titulo: t(lang, "Trabajo en Datyo", "Work at Datyo"),
+    descripcion: t(lang, "Warehouse documentado y con tests en dbt, y tableros de productividad en Power BI.", "A documented, tested dbt warehouse and productivity dashboards in Power BI."),
+    deps: ["fct_datyo"],
+    tags: ["datos", "actual"],
+    columnas: [["Owner", perfil.nombre], [t(lang, "Tipo", "Type"), "dashboard"]],
+  },
+  {
+    id: "web_elargot",
+    tipo: "exposure",
+    capa: 4,
+    titulo: "Elargot",
+    descripcion: t(lang, "Landing y tienda demo de Elargot, la plataforma de tiendas online.", "Landing page and demo store of Elargot, the online store platform."),
+    deps: ["fct_tienda_online"],
+    tags: ["web"],
+    columnas: [["Owner", perfil.nombre], [t(lang, "Tipo", "Type"), "application"]],
+    links: linksProj("tienda_online"),
+  },
+  {
+    id: "portfolio",
+    tipo: "exposure",
+    capa: 4,
+    titulo: t(lang, "Este portfolio", "This portfolio"),
+    descripcion: t(lang, `Lo que consume todo lo anterior: ${vistas.length} vistas del mismo contenido, de este linaje a una terminal SQL.`, `What consumes everything above: ${vistas.length} views of the same content, from this lineage to a SQL terminal.`),
+    deps: ["fct_datyo", "fct_tesis_sube", "fct_espacioamine", "fct_experimentos_amine", "fct_tienda_online", "dim_perfil"],
+    tags: ["perfil"],
+    columnas: [["Owner", perfil.nombre], [t(lang, "Tipo", "Type"), "application"]],
+    links: [[t(lang, "Contacto", "Contact"), `mailto:${perfil.email}`]],
+  },
+];
+
+// Layout: columnas por capa, filas en el orden de la lista. Medidas en px del SVG.
+const NODE_W = 216;
+const NODE_H = 40;
+const COL_GAP = 68;
+const ROW_GAP = 22;
+// Orden vertical dentro de cada columna, elegido para que se crucen pocas aristas.
+const ORDEN = [
+  "datyo.trabajo", "pasantias.infocontrol", "unsj.sistemas", "pasantias.wes", "pasantias.unsj_computos", "examen.ingles",
+  "stg_bi", "stg_sql", "stg_python", "stg_web", "stg_qa", "stg_soporte", "stg_ingles",
+  "int_modelado_datos", "int_backend", "int_frontend_interactivo",
+  "fct_tesis_sube", "fct_datyo", "fct_tienda_online", "fct_experimentos_amine", "fct_espacioamine", "dim_perfil",
+  "licenciatura", "trabajo_datyo", "web_elargot", "portfolio",
+];
+const porCapa = new Map<number, Nodo[]>();
+[...nodos]
+  .sort((a, b) => ORDEN.indexOf(a.id) - ORDEN.indexOf(b.id))
+  .forEach((n) => porCapa.set(n.capa, [...(porCapa.get(n.capa) ?? []), n]));
+const maxFilas = Math.max(...[...porCapa.values()].map((c) => c.length));
+const altoTotal = maxFilas * (NODE_H + ROW_GAP) - ROW_GAP;
+const pos = new Map<string, { x: number; y: number }>();
+porCapa.forEach((col, capa) => {
+  const alto = col.length * (NODE_H + ROW_GAP) - ROW_GAP;
+  const y0 = (altoTotal - alto) / 2;
+  col.forEach((n, i) => pos.set(n.id, { x: capa * (NODE_W + COL_GAP), y: y0 + i * (NODE_H + ROW_GAP) }));
+});
+const PAD = 24;
+const W = (porCapa.size - 1) * (NODE_W + COL_GAP) + NODE_W + PAD * 2;
+const H = altoTotal + PAD * 2;
+
+const aristas = nodos.flatMap((n) =>
+  n.deps.map((d) => {
+    const a = pos.get(d)!;
+    const b = pos.get(n.id)!;
+    const x1 = a.x + NODE_W + PAD;
+    const y1 = a.y + NODE_H / 2 + PAD;
+    const x2 = b.x + PAD;
+    const y2 = b.y + NODE_H / 2 + PAD;
+    const mx = (x1 + x2) / 2;
+    return { from: d, to: n.id, d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}` };
+  }),
+);
+
+const CAPAS = [t(lang, "Fuentes", "Sources"), "Staging", t(lang, "Intermedios", "Intermediate"), "Marts", "Exposures"];
+const presets = ["+fct_datyo", "fct_experimentos_amine", "+fct_tienda_online", "unsj.sistemas+", "tag:datos", "tag:web"];
+---
+
+<ViewLayout
+  title={t(lang, "Ignacio Colomé · Linaje", "Ignacio Colomé · Lineage")}
+  description={t(
+    lang,
+    "La carrera de Ignacio Colomé como un grafo de linaje de dbt: de la formación a los trabajos y proyectos.",
+    "Ignacio Colomé's career as a dbt lineage graph: from education to jobs and projects.",
+  )}
+  vista="linaje"
+  lang={lang}
+>
+  <div class="ln">
+    <header class="ln-top">
+      <p class="ln-proj"><span>{t(lang, "proyecto", "project")}</span> ignacio_colome</p>
+      <h1>{t(lang, "Linaje", "Lineage")}</h1>
+      <p class="ln-help">
+        {t(
+          lang,
+          `Soy ${perfil.nombre}, ${perfil.rol.toLowerCase()} en ${perfil.ubicacion}. Cada trabajo y proyecto depende de lo que vino antes. Tocá un nodo para ver su documentación.`,
+          `I'm ${perfil.nombre}, ${perfil.rol.toLowerCase()} in ${perfil.ubicacion}. Every job and project depends on what came before. Tap a node to see its docs.`,
+        )}
+      </p>
+    </header>
+
+    <form class="ln-select" data-select-form role="search">
+      <label for="ln-q"><code>--select</code></label>
+      <input id="ln-q" name="q" autocomplete="off" spellcheck="false" placeholder="+fct_datyo, tag:web, unsj.sistemas+" />
+      <button type="submit">{t(lang, "Aplicar", "Apply")}</button>
+      <button type="button" data-clear>{t(lang, "Todo", "All")}</button>
+      <div class="ln-presets" aria-label={t(lang, "Ejemplos", "Examples")}>
+        {presets.map((p) => <button type="button" data-preset={p}><code>{p}</code></button>)}
+      </div>
+      <p class="ln-status" data-status aria-live="polite"></p>
+    </form>
+
+    <div class="ln-stage">
+      <div class="ln-canvas" data-canvas tabindex="0" aria-label={t(lang, "Grafo de linaje; se desplaza horizontalmente", "Lineage graph; scrolls horizontally")}>
+        <svg width={W} height={H + 28} viewBox={`0 0 ${W} ${H + 28}`} role="group" aria-label={t(lang, "Grafo de linaje", "Lineage graph")}>
+          <g class="ln-cols">
+            {CAPAS.map((c, i) => <text x={PAD + i * (NODE_W + COL_GAP)} y={H + 20}>{c}</text>)}
+          </g>
+          <g class="ln-edges">
+            {aristas.map((a) => <path d={a.d} data-from={a.from} data-to={a.to} />)}
+          </g>
+          <g class="ln-nodes">
+            {
+              nodos.map((n) => {
+                const p = pos.get(n.id)!;
+                return (
+                  <g
+                    class={`ln-node ln-${n.tipo}`}
+                    data-node={n.id}
+                    transform={`translate(${p.x + PAD},${p.y + PAD})`}
+                    tabindex="0"
+                    role="button"
+                    aria-label={`${n.id}: ${n.titulo}`}
+                  >
+                    <rect width={NODE_W} height={NODE_H} rx="6" />
+                    <text x="12" y="25">{n.id}</text>
+                  </g>
+                );
+              })
+            }
+          </g>
+        </svg>
+      </div>
+
+      <aside class="ln-panel" data-panel hidden aria-live="polite">
+        <button type="button" class="ln-close" data-close aria-label={t(lang, "Cerrar documentación", "Close docs")}>✕</button>
+        <div data-panel-body></div>
+      </aside>
+    </div>
+
+    <ul class="ln-legend" aria-label={t(lang, "Referencias", "Legend")}>
+      <li><i class="ln-sw ln-source"></i>source</li>
+      <li><i class="ln-sw ln-model"></i>model</li>
+      <li><i class="ln-sw ln-exposure"></i>exposure</li>
+    </ul>
+  </div>
+
+  <!-- Formulario de mensaje: se copia al panel cuando se abre dim_perfil -->
+  <template id="ln-form">
+    <h3>{t(lang, "Escribime", "Write to me")}</h3>
+    <div class="ln-form"><MensajeForm /></div>
+  </template>
+
+  <script type="application/json" id="ln-data" set:html={JSON.stringify({ nodos, en: lang === "en" })} />
+</ViewLayout>
+
+<style is:global>
+  .ln {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --ink: #1c2033;
+    --ink-2: #555a6e;
+    --line: #dcdde3;
+    --edge: #b9bcc7;
+    --c-source: #2f7d1f;
+    --c-model: #00728a;
+    --c-exposure: #c2410c;
+    --hi: #ff694b;
+    min-height: 100vh;
+    background: var(--bg);
+    background-image: radial-gradient(#d6d7dc 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .ln {
+      --bg: #13151c;
+      --surface: #1b1e27;
+      --ink: #eceef4;
+      --ink-2: #a3a8b8;
+      --line: #2c303c;
+      --edge: #4a4f5e;
+      --c-source: #3c8f2a;
+      --c-model: #0b7f99;
+      --c-exposure: #c9501c;
+      background-image: radial-gradient(#262a35 1px, transparent 1px);
+    }
+  }
+  body:has(.ln) {
+    background: #f7f7f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    body:has(.ln) {
+      background: #13151c;
+    }
+  }
+  .ln :focus-visible {
+    outline: 2px solid var(--hi);
+    outline-offset: 2px;
+  }
+  .ln button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .ln code {
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  .ln-top {
+    padding: 24px 24px 8px;
+    max-width: 900px;
+  }
+  @media (max-width: 767px) {
+    .ln-top {
+      padding-right: 180px;
+    }
+  }
+  .ln-proj {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .ln-proj span {
+    color: var(--hi);
+  }
+  .ln-top h1 {
+    font-size: 30px;
+    font-weight: 650;
+    margin: 4px 0;
+  }
+  .ln-help {
+    color: var(--ink-2);
+  }
+  .ln-select {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+  }
+  .ln-select label {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .ln-select input {
+    flex: 1 1 260px;
+    min-height: 40px;
+    padding: 0 12px;
+    font: 14px ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .ln-select > button {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .ln-select > button[type="submit"] {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .ln-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .ln-presets button {
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px dashed var(--line);
+    background: transparent;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .ln-presets button:hover {
+    border-color: var(--hi);
+    color: var(--ink);
+  }
+  .ln-status {
+    width: 100%;
+    font-size: 12px;
+    color: var(--ink-2);
+    min-height: 1em;
+  }
+  .ln-stage {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+  }
+  .ln-canvas {
+    flex: 1;
+    overflow: auto;
+    padding: 8px 0 24px;
+    cursor: grab;
+  }
+  .ln-canvas.is-dragging {
+    cursor: grabbing;
+  }
+  .ln-canvas svg {
+    display: block;
+    margin: 0 auto;
+  }
+  .ln-cols text {
+    fill: var(--ink-2);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .ln-edges path {
+    fill: none;
+    stroke: var(--edge);
+    stroke-width: 1.5;
+    transition: stroke 0.2s, opacity 0.2s;
+  }
+  .ln-edges path.is-hi {
+    stroke: var(--hi);
+    stroke-width: 2;
+  }
+  .ln-node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .ln-node rect {
+    stroke: transparent;
+    stroke-width: 2;
+  }
+  .ln-node text {
+    fill: #fff;
+    font: 600 13px ui-monospace, "Cascadia Code", Consolas, monospace;
+    pointer-events: none;
+  }
+  .ln-source rect { fill: var(--c-source); }
+  .ln-model rect { fill: var(--c-model); }
+  .ln-exposure rect { fill: var(--c-exposure); }
+  .ln-node:hover rect,
+  .ln-node.is-active rect {
+    stroke: var(--hi);
+  }
+  .ln.has-focus .ln-node:not(.is-on),
+  .ln.has-focus .ln-edges path:not(.is-hi) {
+    opacity: 0.18;
+  }
+  .ln-panel {
+    width: 380px;
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    position: sticky;
+    top: 24px;
+    margin: 8px 24px 24px 0;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px #0000001f;
+  }
+  @media (max-width: 900px) {
+    .ln-panel {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: auto;
+      width: auto;
+      max-height: 62vh;
+      margin: 0;
+      border-radius: 16px 16px 0 0;
+      z-index: 1100;
+    }
+  }
+  .ln-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: none;
+    font-size: 16px;
+  }
+  .ln-panel .ln-kind {
+    font: 12px ui-monospace, Consolas, monospace;
+    color: var(--ink-2);
+  }
+  .ln-panel h2 {
+    font: 650 17px ui-monospace, "Cascadia Code", Consolas, monospace;
+    margin: 4px 40px 2px 0;
+    word-break: break-all;
+  }
+  .ln-panel h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-2);
+    margin: 16px 0 6px;
+  }
+  .ln-panel p {
+    line-height: 1.55;
+  }
+  .ln-panel .ln-sub {
+    color: var(--ink-2);
+    margin-bottom: 8px;
+  }
+  .ln-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .ln-panel td {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .ln-panel td:first-child {
+    width: 34%;
+    font-family: ui-monospace, Consolas, monospace;
+    color: var(--ink-2);
+    padding-right: 8px;
+  }
+  .ln-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ln-refs button {
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    font: 12px ui-monospace, Consolas, monospace;
+  }
+  .ln-form {
+    --mf-bg: var(--bg);
+    --mf-ink: var(--ink);
+    --mf-ink-2: var(--ink-2);
+    --mf-line: var(--line);
+    --mf-accent: var(--c-exposure);
+    --mf-accent-ink: #ffffff;
+    --mf-radius: 6px;
+  }
+  .ln-panel pre {
+    padding: 12px;
+    border-radius: 6px;
+    background: #1c2033;
+    color: #e4e6ee;
+    font: 12px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace;
+    overflow-x: auto;
+  }
+  .ln-panel pre .k { color: #ff9b7f; }
+  .ln-panel pre .s { color: #9fd98a; }
+  .ln-panel a {
+    color: var(--c-model);
+    display: inline-block;
+    padding: 6px 0;
+    margin-right: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .ln-panel a {
+      color: #5cc3dc;
+    }
+  }
+  .ln-legend {
+    list-style: none;
+    display: flex;
+    gap: 16px;
+    padding: 0 24px 32px;
+    margin: 0;
+    font: 12px ui-monospace, Consolas, monospace;
+    color: var(--ink-2);
+  }
+  .ln-legend li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ln-sw {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .ln-sw.ln-source { background: var(--c-source); }
+  .ln-sw.ln-model { background: var(--c-model); }
+  .ln-sw.ln-exposure { background: var(--c-exposure); }
+</style>
+
+<script>
+  interface Nodo {
+    id: string;
+    tipo: "source" | "model" | "exposure";
+    titulo: string;
+    descripcion: string;
+    deps: string[];
+    tags: string[];
+    columnas: [string, string][];
+    links?: [string, string][];
+  }
+
+  const { nodos, en } = JSON.parse(document.getElementById("ln-data")!.textContent!) as { nodos: Nodo[]; en: boolean };
+  const L = (es: string, en_: string) => (en ? en_ : es);
+  const byId = new Map(nodos.map((n) => [n.id, n]));
+  const hijos = new Map<string, string[]>();
+  nodos.forEach((n) => n.deps.forEach((d) => hijos.set(d, [...(hijos.get(d) ?? []), n.id])));
+
+  const root = document.querySelector<HTMLElement>(".ln")!;
+  const panel = document.querySelector<HTMLElement>("[data-panel]")!;
+  const body = document.querySelector<HTMLElement>("[data-panel-body]")!;
+  const input = document.querySelector<HTMLInputElement>("#ln-q")!;
+  const status = document.querySelector<HTMLElement>("[data-status]")!;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+  function walk(id: string, next: (id: string) => string[], out = new Set<string>()) {
+    for (const n of next(id)) {
+      if (!out.has(n)) {
+        out.add(n);
+        walk(n, next, out);
+      }
+    }
+    return out;
+  }
+  const ancestros = (id: string) => walk(id, (x) => byId.get(x)?.deps ?? []);
+  const descendientes = (id: string) => walk(id, (x) => hijos.get(x) ?? []);
+
+  /** Sintaxis de selección de dbt: nombre, +nombre, nombre+, +nombre+, tag:x; varias separadas por espacio o coma. */
+  function seleccionar(q: string): Set<string> | null {
+    const partes = q.split(/[\s,]+/).filter(Boolean);
+    if (!partes.length) return null;
+    const out = new Set<string>();
+    for (const p of partes) {
+      if (p.startsWith("tag:")) {
+        nodos.filter((n) => n.tags.includes(p.slice(4))).forEach((n) => out.add(n.id));
+        continue;
+      }
+      const up = p.startsWith("+");
+      const down = p.endsWith("+");
+      const name = p.replace(/^\+|\+$/g, "");
+      const matches = nodos.filter((n) => n.id === name || n.id.includes(name));
+      matches.forEach((n) => {
+        out.add(n.id);
+        if (up) ancestros(n.id).forEach((x) => out.add(x));
+        if (down) descendientes(n.id).forEach((x) => out.add(x));
+      });
+    }
+    return out;
+  }
+
+  function pintar(sel: Set<string> | null, activo: string | null = null) {
+    root.classList.toggle("has-focus", !!sel);
+    document.querySelectorAll<SVGGElement>("[data-node]").forEach((g) => {
+      const id = g.dataset.node!;
+      g.classList.toggle("is-on", !!sel?.has(id));
+      g.classList.toggle("is-active", id === activo);
+    });
+    document.querySelectorAll<SVGPathElement>(".ln-edges path").forEach((p) => {
+      p.classList.toggle("is-hi", !!sel && sel.has(p.dataset.from!) && sel.has(p.dataset.to!));
+    });
+  }
+
+  function aplicar(q: string) {
+    const sel = seleccionar(q);
+    pintar(sel);
+    status.textContent = sel === null ? "" : sel.size ? `${sel.size} ${L("nodos seleccionados", "nodes selected")}` : L("Nada coincide con esa selección.", "Nothing matches that selection.");
+  }
+
+  function codigo(n: Nodo) {
+    if (n.tipo === "source") {
+      const [src, tabla] = n.id.split(".");
+      return `<span class="k">sources</span>:\n  - name: ${esc(src)}\n    tables:\n      - name: ${esc(tabla)}`;
+    }
+    if (n.tipo === "exposure") {
+      return `<span class="k">exposures</span>:\n  - name: ${esc(n.id)}\n    type: ${esc(n.columnas.find(([k]) => k === "Tipo" || k === "Type")?.[1] ?? "application")}\n    depends_on:\n${n.deps.map((d) => `      - ref(<span class="s">'${esc(d)}'</span>)`).join("\n")}`;
+    }
+    const refs = n.deps.map((d) => {
+      const s = byId.get(d)!;
+      return s.tipo === "source" ? `{{ source(<span class="s">'${esc(d.split(".")[0])}'</span>, <span class="s">'${esc(d.split(".")[1])}'</span>) }}` : `{{ ref(<span class="s">'${esc(d)}'</span>) }}`;
+    });
+    return `<span class="k">select</span> *\n<span class="k">from</span> ${refs[0] ?? ""}${refs
+      .slice(1)
+      .map((r) => `\n<span class="k">join</span> ${r} <span class="k">using</span> (experiencia)`)
+      .join("")}`;
+  }
+
+  function abrir(id: string) {
+    const n = byId.get(id);
+    if (!n) return;
+    const sel = new Set([id, ...ancestros(id), ...descendientes(id)]);
+    pintar(sel, id);
+    input.value = `+${id}+`;
+    status.textContent = L(`${sel.size} nodos en el linaje de ${id}`, `${sel.size} nodes in the lineage of ${id}`);
+    const refsBy = hijos.get(id) ?? [];
+    const btns = (ids: string[]) =>
+      ids.length ? `<div class="ln-refs">${ids.map((x) => `<button type="button" data-goto="${esc(x)}">${esc(x)}</button>`).join("")}</div>` : `<p class="ln-sub">—</p>`;
+    body.innerHTML = `
+      <p class="ln-kind">${n.tipo}${n.tags.length ? ` · ${n.tags.map(esc).join(", ")}` : ""}</p>
+      <h2>${esc(n.id)}</h2>
+      <p class="ln-sub">${esc(n.titulo)}</p>
+      <p>${esc(n.descripcion)}</p>
+      ${n.columnas.length ? `<h3>${L("Columnas", "Columns")}</h3><table>${n.columnas.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>` : ""}
+      ${n.links?.length ? `<h3>${L("Enlaces", "Links")}</h3><p>${n.links.map(([k, h]) => `<a href="${esc(h)}" target="_blank" rel="noopener">${esc(k)} ↗</a>`).join("")}</p>` : ""}
+      <h3>${L("Depende de", "Depends on")}</h3>${btns(n.deps)}
+      <h3>${L("Lo usan", "Used by")}</h3>${btns(refsBy)}
+      <h3>${L("Código", "Code")}</h3><pre>${codigo(n)}</pre>`;
+    if (id === "dim_perfil") {
+      const tpl = document.querySelector<HTMLTemplateElement>("#ln-form");
+      if (tpl) body.querySelector("h2")!.nextElementSibling!.after(tpl.content.cloneNode(true));
+    }
+    panel.hidden = false;
+    body.querySelectorAll<HTMLButtonElement>("[data-goto]").forEach((b) => b.addEventListener("click", () => abrir(b.dataset.goto!)));
+  }
+
+  function cerrar() {
+    panel.hidden = true;
+    aplicar(input.value);
+  }
+
+  document.querySelectorAll<SVGGElement>("[data-node]").forEach((g) => {
+    const id = g.dataset.node!;
+    g.addEventListener("click", () => {
+      if (!moved) abrir(id);
+    });
+    g.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        abrir(id);
+      }
+    });
+    g.addEventListener("pointerenter", () => {
+      if (panel.hidden && !input.value) pintar(new Set([id, ...ancestros(id), ...descendientes(id)]), id);
+    });
+    g.addEventListener("pointerleave", () => {
+      if (panel.hidden && !input.value) pintar(null);
+    });
+  });
+
+  document.querySelector("[data-close]")!.addEventListener("click", cerrar);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !panel.hidden) cerrar();
+  });
+  document.querySelector<HTMLFormElement>("[data-select-form]")!.addEventListener("submit", (e) => {
+    e.preventDefault();
+    panel.hidden = true;
+    aplicar(input.value);
+  });
+  document.querySelector("[data-clear]")!.addEventListener("click", () => {
+    input.value = "";
+    panel.hidden = true;
+    aplicar("");
+  });
+  document.querySelectorAll<HTMLButtonElement>("[data-preset]").forEach((b) =>
+    b.addEventListener("click", () => {
+      input.value = b.dataset.preset!;
+      panel.hidden = true;
+      aplicar(input.value);
+    }),
+  );
+
+  // Arrastrar para desplazar el grafo con el mouse (en touch ya scrollea solo).
+  const canvas = document.querySelector<HTMLElement>("[data-canvas]")!;
+  let drag: { x: number; y: number; sl: number; st: number } | null = null;
+  let moved = false;
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse") return;
+    drag = { x: e.clientX, y: e.clientY, sl: canvas.scrollLeft, st: scrollY };
+    moved = false;
+  });
+  addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 4) {
+      moved = true;
+      canvas.classList.add("is-dragging");
+    }
+    canvas.scrollLeft = drag.sl - dx;
+  });
+  addEventListener("pointerup", () => {
+    drag = null;
+    canvas.classList.remove("is-dragging");
+    setTimeout(() => (moved = false));
+  });
+</script>

@@ -1,10 +1,21 @@
 ---
-import { proyectos } from "@/data/perfil";
+// Proyectos de la vista clásica. Si existe public/clips/<id>.mp4 (se graban con
+// `npm run clips`), el clip se reproduce al pasar el mouse por la tarjeta.
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { contenido, langDe, ruta, t } from "@/data/i18n";
+import { casos } from "@/data/casos";
 const base = import.meta.env.BASE_URL;
+const lang = langDe(Astro.url);
+const { proyectos } = contenido(lang);
+const clip = (id: string) => (existsSync(join(process.cwd(), "public", "clips", `${id}.mp4`)) ? `${base}clips/${id}.mp4` : null);
 
 const projects = proyectos
   .filter((p) => p.destacado)
   .map((p) => ({
+    id: p.id,
+    video: clip(p.id),
+    caso: casos.some((c) => c.id === p.id) ? ruta(lang, `casos/${p.id}/`) : null,
     title: p.titulo,
     image: `${base}${p.imagen}`,
     link: p.codigo,
@@ -21,13 +32,13 @@ const projects = proyectos
   class="py-12 border-t border-[#ffffff10] text-[var(--white)]"
 >
   <div class="max-w-5xl mx-auto">
-    <h2 class="text-lg text-[var(--sec)] mb-2 shiny-sec">Mi trabajo</h2>
-    <h3 class="text-5xl md:text-7xl font-semibold tracking-tight mb-10">Proyectos</h3>
+    <h2 class="text-lg text-[var(--sec)] mb-2 shiny-sec">{t(lang, "Mi trabajo", "My work")}</h2>
+    <h3 class="text-5xl md:text-7xl font-semibold tracking-tight mb-10">{t(lang, "Proyectos", "Projects")}</h3>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       {
         projects.map((project) => (
-          <div class="group">
+          <div class="group" data-proyecto>
             <div class="block">
               <div class="spot relative rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 mb-4">
                 <img
@@ -35,6 +46,17 @@ const projects = proyectos
                   alt={project.title}
                   class={`w-full h-48 md:h-72 object-cover object-top transition-transform duration-300 ${project.comingSoon ? "blur-sm scale-105" : "group-hover:scale-105"}`}
                 />
+                {project.video && (
+                  <video
+                    class="clip absolute inset-0 w-full h-full object-cover object-top"
+                    src={project.video}
+                    muted
+                    loop
+                    playsinline
+                    preload="none"
+                    aria-hidden="true"
+                  />
+                )}
                 {project.comingSoon && (
                   <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
                     <span class="text-white text-3xl md:text-4xl font-bold tracking-[0.2em] drop-shadow-lg">
@@ -53,9 +75,17 @@ const projects = proyectos
                     {project.status}
                   </span>
                   <p class="text-sm text-[var(--white-icon)] mt-1 pr-4">{project.description}</p>
-                  {project.extraLinks && (
+                  {(project.extraLinks || project.caso) && (
                     <div class="flex flex-wrap gap-2 mt-3">
-                      {project.extraLinks.map((l) => (
+                      {project.caso && (
+                        <a
+                          href={project.caso}
+                          class="text-sm px-3 py-1 rounded-full border border-[var(--sec)] text-[var(--white)] hover:bg-[var(--white-icon-tr)] transition duration-300"
+                        >
+                          {t(lang, "Caso de estudio", "Case study")} →
+                        </a>
+                      )}
+                      {(project.extraLinks ?? []).map((l) => (
                         <a
                           target="_blank"
                           href={l.href}
@@ -115,7 +145,7 @@ const projects = proyectos
       aria-label="GitHub"
       class="w-full flex items-center justify-center gap-2 mt-9 text-[var(--white-icon)] hover:text-white transition duration-300 ease-in-out border border-[var(--white-icon-tr)] p-3 rounded-full bg-[#1414149c] hover:bg-[var(--white-icon-tr)] hover:scale-105"
     >
-      <span class="md:text-lg text-md">Más proyectos en</span>
+      <span class="md:text-lg text-md">{t(lang, "Más proyectos en", "More projects on")}</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -129,3 +159,36 @@ const projects = proyectos
     </a>
   </div>
 </section>
+
+<style>
+  .clip {
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+  .clip.on {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  // Clip al pasar el mouse (o al enfocar con teclado). En pantallas táctiles no hay hover: queda la imagen.
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelectorAll<HTMLElement>("[data-proyecto]").forEach((card) => {
+    const v = card.querySelector<HTMLVideoElement>("video.clip");
+    if (!v || reduce) return;
+    const play = () => {
+      v.play().then(() => v.classList.add("on")).catch(() => {});
+    };
+    const stop = () => {
+      v.classList.remove("on");
+      v.pause();
+    };
+    card.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "mouse") play();
+    });
+    card.addEventListener("pointerleave", stop);
+    card.addEventListener("focusin", play);
+    card.addEventListener("focusout", stop);
+  });
+</script>

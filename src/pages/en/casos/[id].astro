@@ -1,0 +1,10 @@
+---
+import CasoEstudio from "@/views/CasoEstudio.astro";
+import { casos } from "@/data/casos";
+
+export function getStaticPaths() {
+  return casos.map((c) => ({ params: { id: c.id } }));
+}
+---
+
+<CasoEstudio id={Astro.params.id!} lang="en" />

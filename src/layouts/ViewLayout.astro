@@ -2,37 +2,36 @@
 // Layout de las vistas alternativas: cada una trae su propio diseño, así que
 // acá solo va el head común y el selector de vista.
 import ViewSwitcher from "@/components/ViewSwitcher.astro";
-import { perfil } from "@/data/perfil";
+import HeadComun from "@/components/HeadComun.astro";
+import type { Lang } from "@/data/i18n";
 
 interface Props {
   title: string;
   description: string;
   vista: string;
+  lang?: Lang;
+  /** Tema del selector si la página no es una vista (casos de estudio). */
+  tema?: string;
+  og?: string;
 }
 
-const { title, description, vista } = Astro.props;
+const { title, description, vista, lang = "es", tema, og } = Astro.props;
 const base = import.meta.env.BASE_URL;
-const canonical = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content={`Portfolio de ${perfil.nombre}`} />
+    <HeadComun title={title} description={description} vista={vista} lang={lang} og={og} />
     <slot name="head" />
   </head>
   <body>
     <slot />
-    <ViewSwitcher actual={vista} />
+    <ViewSwitcher actual={vista} lang={lang} tema={tema} />
   </body>
 </html>

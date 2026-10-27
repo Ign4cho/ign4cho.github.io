@@ -1,21 +1,26 @@
 ---
+import HeadComun from "@/components/HeadComun.astro";
+import type { Lang } from "@/data/i18n";
+
 interface Props {
   title: string;
+  lang?: Lang;
 }
 
-const { title } = Astro.props;
+const { title, lang = "es" } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const description =
+  lang === "en"
+    ? "Ignacio Colomé, data analyst and web developer: dbt, Power BI and interactive websites."
+    : "Ignacio Colomé, analista de datos y desarrollador web: dbt, Power BI y sitios web interactivos.";
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <title>{title}</title>
-    <meta
-      name="description"
-      content="Ignacio Colomé - Desarrollador Web, QA Tester y analista de Business Intelligence. Construyo soluciones digitales con foco en calidad y datos."
-    />
+    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
 
@@ -27,19 +32,7 @@ const base = import.meta.env.BASE_URL;
       crossorigin="anonymous"
     />
 
-    <meta
-      property="og:title"
-      content="Ignacio Colomé | Desarrollador Web"
-    />
-    <meta
-      property="og:description"
-      content="Portfolio de Ignacio Colomé, Desarrollador Web con experiencia en QA Testing y Business Intelligence."
-    />
-    <meta property="og:type" content="website" />
-    <meta
-      property="og:site_name"
-      content="Portfolio de Ignacio Colomé"
-    />
+    <HeadComun title={title} description={description} vista="clasica" lang={lang} />
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
@@ -52,8 +45,8 @@ const base = import.meta.env.BASE_URL;
           "https://github.com/Ign4cho",
           "https://www.linkedin.com/in/ignacio-colome/"
         ],
-        "jobTitle": "Desarrollador Web",
-        "description": "Desarrollador Web con experiencia en QA Testing y Business Intelligence."
+        "jobTitle": "Analista de datos y desarrollador web",
+        "description": "Analista de datos y desarrollador web: dbt, Power BI y sitios web interactivos."
       }
     </script>
   </head>

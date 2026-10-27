@@ -33,10 +33,30 @@ const CategoryIcons = {
   ),
 };
 
-const SkillsList = () => {
+const SkillsList = ({ lang = "es" }: { lang?: "es" | "en" }) => {
   const [openItem, setOpenItem] = useState<string | null>(null);
 
-  const skills = {
+  const en = lang === "en";
+  // Las claves en español eligen el ícono; `nombres` las traduce.
+  const nombres: Record<string, string> = en ? { "Datos y BI": "Data & BI", "Desarrollo Web": "Web development", "QA / Testing": "QA / Testing" } : {};
+  const skills = en ? {
+    "Datos y BI": [
+      "Warehouse modeling with dbt and SQL Server",
+      "Data tests, documentation and lineage",
+      "API integrations and loads with Python and SQL",
+      "Dashboards in Power BI and Looker Studio",
+    ],
+    "Desarrollo Web": [
+      "Institutional sites and landing pages with Astro",
+      "Interaction and animation: GSAP, Three.js, scroll",
+      "E-commerce with Node.js and PostgreSQL",
+    ],
+    "QA / Testing": [
+      "Functional (black-box) testing",
+      "Test case design and execution",
+      "API validation with Postman",
+    ],
+  } : {
     "Datos y BI": [
       "Modelado de warehouses con dbt y SQL Server",
       "Tests, documentación y linaje de datos",
@@ -62,7 +82,7 @@ const SkillsList = () => {
   return (
     <div className="text-left pt-3 md:pt-9">
       <h3 className="text-[var(--white)] text-3xl md:text-4xl font-semibold md:mb-6">
-        ¿Qué hago?
+        {en ? "What I do" : "¿Qué hago?"}
       </h3>
       <ul className="space-y-4 mt-4 text-lg">
         {Object.entries(skills).map(([category, items]) => (
@@ -76,7 +96,7 @@ const SkillsList = () => {
                 <div className="flex items-center gap-2 flex-grow justify-between">
                   <div className="min-w-0 max-w-[200px] md:max-w-none overflow-hidden">
                     <span className="block truncate text-[var(--white)] text-lg">
-                      {category}
+                      {nombres[category] ?? category}
                     </span>
                   </div>
                   <svg

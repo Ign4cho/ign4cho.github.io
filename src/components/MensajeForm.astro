@@ -3,14 +3,20 @@
 // Cada vista lo tiñe con variables: --mf-bg, --mf-ink, --mf-ink-2, --mf-line,
 // --mf-accent, --mf-accent-ink y --mf-radius. El envío se maneja por delegación,
 // así funciona aunque el formulario se inserte después (panel del linaje).
+import { t, type Lang } from "@/data/i18n";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "es") as Lang } = Astro.props;
 ---
 
-<form class="mf" data-mensaje-form action="https://api.web3forms.com/submit" method="POST">
+<form class="mf" data-mensaje-form data-lang={lang} action="https://api.web3forms.com/submit" method="POST">
   <input type="hidden" name="access_key" value="5b8ae55d-7dcd-474f-b63c-f98d4b65bcf4" />
-  <input type="hidden" name="subject" value="Nuevo mensaje desde tu portfolio" />
+  <input type="hidden" name="subject" value={t(lang, "Nuevo mensaje desde tu portfolio", "Nuevo mensaje desde tu portfolio (inglés)")} />
   <input type="checkbox" name="botcheck" class="mf-bot" tabindex="-1" autocomplete="off" />
   <label>
-    <span>Nombre</span>
+    <span>{t(lang, "Nombre", "Name")}</span>
     <input type="text" name="from_name" autocomplete="name" required />
   </label>
   <label>
@@ -18,10 +24,10 @@
     <input type="email" name="reply_to" autocomplete="email" required />
   </label>
   <label>
-    <span>Mensaje</span>
+    <span>{t(lang, "Mensaje", "Message")}</span>
     <textarea name="message" rows="4" required></textarea>
   </label>
-  <button type="submit">Enviar mensaje</button>
+  <button type="submit">{t(lang, "Enviar mensaje", "Send message")}</button>
   <p class="mf-estado" data-estado aria-live="polite"></p>
 </form>
 
@@ -89,15 +95,16 @@
     e.preventDefault();
     const estado = form.querySelector<HTMLElement>("[data-estado]")!;
     const boton = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    const en = form.dataset.lang === "en";
     boton.disabled = true;
-    estado.textContent = "Enviando…";
+    estado.textContent = en ? "Sending…" : "Enviando…";
     try {
       const res = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error(String(res.status));
       form.reset();
-      estado.textContent = "✅ ¡Gracias por tu mensaje! Te respondo pronto.";
+      estado.textContent = en ? "✅ Thanks for your message! I'll get back to you soon." : "✅ ¡Gracias por tu mensaje! Te respondo pronto.";
     } catch {
-      estado.textContent = "No se pudo enviar. Probá de nuevo o escribime por mail.";
+      estado.textContent = en ? "It couldn't be sent. Try again or email me." : "No se pudo enviar. Probá de nuevo o escribime por mail.";
     } finally {
       boton.disabled = false;
     }

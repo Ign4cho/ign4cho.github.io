@@ -1,16 +1,21 @@
+---
+import { langDe, t } from "@/data/i18n";
+const lang = langDe(Astro.url);
+---
+
 <section id="contact" class="w-full py-12 border-t border-[#ffffff10]">
   <div class="max-w-5xl mx-auto">
-    <h2 class="text-lg text-[var(--sec)] mb-2 shiny-sec">Hablemos</h2>
+    <h2 class="text-lg text-[var(--sec)] mb-2 shiny-sec">{t(lang, "Hablemos", "Let's talk")}</h2>
     <h3 class="text-4xl md:text-5xl font-medium text-[var(--white)] mb-6">
-      Contacto
+      {t(lang, "Contacto", "Contact")}
     </h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div class="text-[var(--white-icon)]">
         <p class="mb-4">
-          ¿Tenés un proyecto en mente o querés ponerte en contacto? Escribime.
+          {t(lang, "¿Tenés un proyecto en mente o querés ponerte en contacto? Escribime.", "Got a project in mind or want to get in touch? Write to me.")}
         </p>
         <div class="flex items-center gap-2">
-          <span>Ubicación:</span>
+          <span>{t(lang, "Ubicación:", "Location:")}</span>
           <span class="text-[var(--white)]">San Juan, Argentina</span>
         </div>
       </div>
@@ -28,7 +33,7 @@
           <input
             type="text"
             name="from_name"
-            placeholder="Nombre"
+            placeholder={t(lang, "Nombre", "Name")}
             required
             class="px-4 py-2 bg-[#1414149c] text-[var(--white)] border border-[var(--white-icon-tr)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--sec)]"
           />
@@ -41,7 +46,7 @@
           />
           <textarea
             name="message"
-            placeholder="Mensaje"
+            placeholder={t(lang, "Mensaje", "Message")}
             rows="6"
             required
             class="px-4 py-2 bg-[#1414149c] text-[var(--white)] border border-[var(--white-icon-tr)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--sec)] resize-none"
@@ -50,14 +55,14 @@
             type="submit"
             class="px-4 py-2 bg-[var(--white-icon-tr)] text-[var(--white)] rounded-lg opacity-60 transition-opacity border border-[var(--white-icon-tr)] hover:opacity-100 hover:bg-[var(--white-icon-tr)]"
           >
-            Enviar
+            {t(lang, "Enviar", "Send")}
           </button>
         </form>
         <div
           id="form-message"
           class="hidden justify-center items-center mt-4 text-[var(--white)] text-lg"
         >
-          ✅ ¡Gracias por tu mensaje!
+          {t(lang, "✅ ¡Gracias por tu mensaje!", "✅ Thanks for your message!")}
         </div>
       </div>
     </div>
@@ -85,11 +90,11 @@
       } else {
         const data = await response.json();
         console.error("Error response:", data);
-        alert("Hubo un problema al enviar tu mensaje.");
+        alert(document.documentElement.lang === "en" ? "There was a problem sending your message." : "Hubo un problema al enviar tu mensaje.");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Hubo un problema al enviar tu mensaje.");
+      alert(document.documentElement.lang === "en" ? "There was a problem sending your message." : "Hubo un problema al enviar tu mensaje.");
     }
   });
 </script>
