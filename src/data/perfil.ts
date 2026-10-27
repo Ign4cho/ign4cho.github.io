@@ -168,9 +168,9 @@ export const proyectos: Proyecto[] = [
     anio: 2026,
     estado: "Trabajo Final de Licenciatura",
     descripcion:
-      "Modelado de los patrones de trasbordo del sistema SUBE en el Gran San Juan con cadenas de Markov de tiempo discreto, sobre quince meses de datos. Una parte, la calibración por simulación del test de orden markoviano en tablas ralas con un millón de trasbordos, la presenté en el I Encuentro Conjunto SBM-UMA 2026, en Mar del Plata.",
+      "Modelado de los patrones de trasbordo del sistema SUBE en el Gran San Juan con cadenas de Markov de tiempo discreto, sobre quince meses de datos (unos 28 millones de transacciones por mes): reducción por lotes, reconstrucción de trasbordos por tarjeta, matriz de transición entre líneas, distribución estacionaria y verificación del supuesto de orden 1. En la imagen, la red de trasbordos entre líneas.",
     stack: ["Python", "pandas", "numpy", "scipy", "networkx"],
-    imagen: "demo-tesis-uma.jpg",
+    imagen: "demo-tesis-red.jpg",
     codigo: null,
     sitio: null,
     destacado: true,
@@ -233,9 +233,9 @@ export const charlas = [
 
 // Vistas del portfolio, en el orden del selector.
 export const vistas = [
-  { id: "clasica", nombre: "Clásica", detalle: "Oscura, para leer de corrido", href: "" },
+  { id: "linaje", nombre: "Linaje dbt", detalle: "La carrera como grafo de modelos", href: "" },
+  { id: "clasica", nombre: "Clásica", detalle: "Oscura, para leer de corrido", href: "clasica/" },
   { id: "dashboard", nombre: "Dashboard", detalle: "El portfolio como informe de Power BI", href: "dashboard/" },
-  { id: "linaje", nombre: "Linaje dbt", detalle: "La carrera como grafo de modelos", href: "linaje/" },
   { id: "terminal", nombre: "Terminal SQL", detalle: "Consultas sobre el portfolio", href: "terminal/" },
 ];
 

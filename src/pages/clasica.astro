@@ -1,0 +1,20 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Nav from "@/components/nav.astro";
+import Home from "@/components/home.astro";
+import Experience from "@/components/experience.astro";
+import Projects from "@/components/projects.astro";
+import Contact from "@/components/contact.astro";
+import Footer from "@/components/footer.astro";
+import ViewSwitcher from "@/components/ViewSwitcher.astro";
+---
+
+<Layout title="Nacho Colomé - Portfolio">
+  <Nav />
+  <Home />
+  <Experience />
+  <Projects />
+  <Contact />
+  <Footer />
+  <ViewSwitcher actual="clasica" />
+</Layout>

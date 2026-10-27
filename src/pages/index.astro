@@ -1,20 +1,921 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import Nav from "@/components/nav.astro";
-import Home from "@/components/home.astro";
-import Experience from "@/components/experience.astro";
-import Projects from "@/components/projects.astro";
-import Contact from "@/components/contact.astro";
-import Footer from "@/components/footer.astro";
-import ViewSwitcher from "@/components/ViewSwitcher.astro";
+// Vista «Linaje dbt» (la de inicio): la carrera como grafo de modelos. Fuentes
+// (formación y experiencias) → staging (habilidades base) → intermedios → marts
+// (trabajos y proyectos) → exposures (licenciatura, Datyo, Elargot, portfolio).
+import ViewLayout from "@/layouts/ViewLayout.astro";
+import { perfil, experiencia, proyectos, periodo } from "@/data/perfil";
+
+type Tipo = "source" | "model" | "exposure";
+interface Nodo {
+  id: string;
+  tipo: Tipo;
+  capa: number; // columna del grafo
+  titulo: string;
+  descripcion: string;
+  deps: string[];
+  tags: string[];
+  columnas: [string, string][];
+  links?: [string, string][];
+}
+
+const exp = (id: string) => experiencia.find((e) => e.id === id)!;
+const proj = (id: string) => proyectos.find((p) => p.id === id)!;
+const linksProj = (id: string): [string, string][] => {
+  const p = proj(id);
+  const sitios: [string, string][] = p.extra ? p.extra.map((l) => [l.label, l.href]) : p.sitio ? [["Sitio", p.sitio]] : [];
+  return [...sitios, ...(p.codigo ? [["Código", p.codigo] as [string, string]] : [])];
+};
+
+const nodos: Nodo[] = [
+  // ── Fuentes ─────────────────────────────────────────
+  {
+    id: "unsj.sistemas",
+    tipo: "source",
+    capa: 0,
+    titulo: "UNSJ · Sistemas de Información",
+    descripcion: "Licenciado y Técnico Universitario en Sistemas de Información por la Universidad Nacional de San Juan.",
+    deps: [],
+    tags: ["formacion"],
+    columnas: [["Desde", String(perfil.inicio)], ["Títulos", "Licenciatura · Técnico Universitario"]],
+  },
+  {
+    id: "examen.ingles",
+    tipo: "source",
+    capa: 0,
+    titulo: "Exámenes internacionales · Inglés",
+    descripcion: "Exámenes internacionales de inglés: First Language English (2018) y English as a Second Language (2017).",
+    deps: [],
+    tags: ["formacion"],
+    columnas: [["Exámenes", "First Language English 2018 · English as a Second Language 2017"]],
+  },
+  {
+    id: "datyo.trabajo",
+    tipo: "source",
+    capa: 0,
+    titulo: `Datyo · ${exp("datyo").rol}`,
+    descripcion: "Consultora de datos donde trabajo desde septiembre de 2026: warehouse en SQL Server, migración a dbt, API de Humand y tableros en Power BI.",
+    deps: [],
+    tags: ["datos", "actual"],
+    columnas: [["Período", periodo(exp("datyo").desde, exp("datyo").hasta)], ["Herramientas", exp("datyo").tags.join(", ")]],
+  },
+  ...["unsj_computos", "infocontrol", "wes"].map((id): Nodo => {
+    const e = exp(id);
+    return {
+      id: `pasantias.${id}`,
+      tipo: "source",
+      capa: 0,
+      titulo: `${e.empresa} · ${e.rol}`,
+      descripcion: e.descripcion,
+      deps: [],
+      tags: [e.area, "pasantia"],
+      columnas: [["Período", periodo(e.desde, e.hasta)], ["Herramientas", e.tags.join(", ")]],
+    };
+  }),
+  // ── Staging ─────────────────────────────────────────
+  {
+    id: "stg_sql",
+    tipo: "model",
+    capa: 1,
+    titulo: "SQL",
+    descripcion: "Consultas, modelado relacional y bases de datos: de la facultad a los flujos de datos de Infocontrol.",
+    deps: ["unsj.sistemas", "pasantias.infocontrol"],
+    tags: ["datos"],
+    columnas: [["Motores", "SQL Server, PostgreSQL, MySQL"]],
+  },
+  {
+    id: "stg_bi",
+    tipo: "model",
+    capa: 1,
+    titulo: "Business Intelligence",
+    descripcion: "Definición de KPIs y tableros: Looker Studio en Infocontrol, Power BI en Datyo.",
+    deps: ["pasantias.infocontrol"],
+    tags: ["datos"],
+    columnas: [["Herramientas", "Power BI, Looker Studio"]],
+  },
+  {
+    id: "stg_python",
+    tipo: "model",
+    capa: 1,
+    titulo: "Python para datos",
+    descripcion: "Limpieza, tipado y análisis exploratorio con pandas, numpy y matplotlib.",
+    deps: ["unsj.sistemas"],
+    tags: ["datos"],
+    columnas: [["Librerías", "pandas, numpy, matplotlib"]],
+  },
+  {
+    id: "stg_qa",
+    tipo: "model",
+    capa: 1,
+    titulo: "Calidad de software",
+    descripcion: "Pruebas funcionales de caja negra, casos de prueba, validación de APIs y matrices de trazabilidad.",
+    deps: ["unsj.sistemas", "pasantias.wes"],
+    tags: ["qa"],
+    columnas: [["Herramientas", "Postman"]],
+  },
+  {
+    id: "stg_web",
+    tipo: "model",
+    capa: 1,
+    titulo: "Fundamentos web",
+    descripcion: "HTML, CSS, JavaScript y TypeScript; Astro y Tailwind como base de los sitios.",
+    deps: ["unsj.sistemas"],
+    tags: ["web"],
+    columnas: [["Stack", "Astro, Tailwind CSS, Alpine.js, TypeScript"]],
+  },
+  {
+    id: "stg_soporte",
+    tipo: "model",
+    capa: 1,
+    titulo: "Soporte e infraestructura",
+    descripcion: "Mantenimiento de equipos y redes en el Centro de Cómputos del Rectorado.",
+    deps: ["pasantias.unsj_computos"],
+    tags: ["soporte"],
+    columnas: [["Temas", "Hardware, redes"]],
+  },
+  {
+    id: "stg_ingles",
+    tipo: "model",
+    capa: 1,
+    titulo: "Inglés avanzado",
+    descripcion: "Inglés avanzado para leer documentación técnica, hacer cursos y trabajar con equipos en inglés.",
+    deps: ["examen.ingles"],
+    tags: ["formacion"],
+    columnas: [["Nivel", "Avanzado"]],
+  },
+  // ── Intermedios ─────────────────────────────────────
+  {
+    id: "int_modelado_datos",
+    tipo: "model",
+    capa: 2,
+    titulo: "Modelado de datos con dbt",
+    descripcion: "Warehouse por capas, transformaciones versionadas, tests, documentación y linaje (como este grafo).",
+    deps: ["stg_sql", "stg_python", "datyo.trabajo"],
+    tags: ["datos"],
+    columnas: [["Herramientas", "dbt, SQL Server"]],
+  },
+  {
+    id: "int_frontend_interactivo",
+    tipo: "model",
+    capa: 2,
+    titulo: "Frontend interactivo",
+    descripcion: "Animación, 3D y física en el navegador: scroll que despliega un pliego, objetos arrastrables, WebGPU.",
+    deps: ["stg_web"],
+    tags: ["web"],
+    columnas: [["Librerías", "GSAP, Three.js, Lenis"]],
+  },
+  {
+    id: "int_backend",
+    tipo: "model",
+    capa: 2,
+    titulo: "Backend y pagos",
+    descripcion: "APIs con Node.js y Fastify sobre PostgreSQL, checkout con MercadoPago y eventos server-side.",
+    deps: ["stg_web", "stg_sql"],
+    tags: ["web"],
+    columnas: [["Stack", "Node.js, Fastify, PostgreSQL"]],
+  },
+  // ── Marts ───────────────────────────────────────────
+  {
+    id: "fct_datyo",
+    tipo: "model",
+    capa: 3,
+    titulo: `Datyo · ${exp("datyo").rol}`,
+    descripcion: exp("datyo").descripcion,
+    deps: ["int_modelado_datos", "stg_bi", "stg_python", "datyo.trabajo"],
+    tags: ["datos", "actual"],
+    columnas: [["Período", periodo(exp("datyo").desde, exp("datyo").hasta)], ["Stack", exp("datyo").tags.join(", ")]],
+  },
+  {
+    id: "fct_tesis_sube",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("tesis_sube").titulo,
+    descripcion: proj("tesis_sube").descripcion,
+    deps: ["stg_python", "stg_sql"],
+    tags: ["datos", "tesis"],
+    columnas: [["Año", String(proj("tesis_sube").anio)], ["Estado", proj("tesis_sube").estado], ["Stack", proj("tesis_sube").stack.join(", ")]],
+  },
+  {
+    id: "fct_espacioamine",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("espacioamine").titulo,
+    descripcion: proj("espacioamine").descripcion,
+    deps: ["stg_web", "stg_qa"],
+    tags: ["web", "freelance"],
+    columnas: [["Año", String(proj("espacioamine").anio)], ["Stack", proj("espacioamine").stack.join(", ")]],
+    links: linksProj("espacioamine"),
+  },
+  {
+    id: "fct_experimentos_amine",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("experimentos_amine").titulo,
+    descripcion: proj("experimentos_amine").descripcion,
+    deps: ["int_frontend_interactivo", "fct_espacioamine"],
+    tags: ["web", "freelance"],
+    columnas: [["Año", String(proj("experimentos_amine").anio)], ["Stack", proj("experimentos_amine").stack.join(", ")]],
+    links: linksProj("experimentos_amine"),
+  },
+  {
+    id: "fct_tienda_online",
+    tipo: "model",
+    capa: 3,
+    titulo: proj("tienda_online").titulo,
+    descripcion: proj("tienda_online").descripcion,
+    deps: ["int_backend", "stg_web"],
+    tags: ["web"],
+    columnas: [["Año", String(proj("tienda_online").anio)], ["Stack", proj("tienda_online").stack.join(", ")]],
+    links: linksProj("tienda_online"),
+  },
+  {
+    id: "dim_perfil",
+    tipo: "model",
+    capa: 3,
+    titulo: perfil.nombre,
+    descripcion: `${perfil.rol}. ${perfil.ubicacion}.`,
+    deps: ["stg_ingles", "stg_soporte", "stg_qa"],
+    tags: ["perfil"],
+    columnas: [["Ubicación", perfil.ubicacion], ["Disponibilidad", perfil.disponibilidad], ["Email", perfil.email]],
+    links: [["LinkedIn", perfil.linkedin], ["GitHub", perfil.github]],
+  },
+  // ── Exposures ───────────────────────────────────────
+  {
+    id: "licenciatura",
+    tipo: "exposure",
+    capa: 4,
+    titulo: "Licenciatura en Sistemas de Información",
+    descripcion: "Trabajo Final de la Licenciatura (UNSJ): el modelo de trasbordos SUBE con cadenas de Markov.",
+    deps: ["fct_tesis_sube"],
+    tags: ["datos", "tesis"],
+    columnas: [["Institución", "Universidad Nacional de San Juan"], ["Tipo", "analysis"]],
+  },
+  {
+    id: "trabajo_datyo",
+    tipo: "exposure",
+    capa: 4,
+    titulo: "Trabajo en Datyo",
+    descripcion: "Warehouse documentado y con tests en dbt, y tableros de productividad en Power BI.",
+    deps: ["fct_datyo"],
+    tags: ["datos", "actual"],
+    columnas: [["Owner", perfil.nombre], ["Tipo", "dashboard"]],
+  },
+  {
+    id: "web_elargot",
+    tipo: "exposure",
+    capa: 4,
+    titulo: "Elargot",
+    descripcion: "Landing y tienda demo de Elargot, la plataforma de tiendas online.",
+    deps: ["fct_tienda_online"],
+    tags: ["web"],
+    columnas: [["Owner", perfil.nombre], ["Tipo", "application"]],
+    links: linksProj("tienda_online"),
+  },
+  {
+    id: "portfolio",
+    tipo: "exposure",
+    capa: 4,
+    titulo: "Este portfolio",
+    descripcion: "Lo que consume todo lo anterior. Cuatro vistas del mismo contenido: este linaje, la clásica, un dashboard y una terminal SQL.",
+    deps: ["fct_datyo", "fct_tesis_sube", "fct_espacioamine", "fct_experimentos_amine", "fct_tienda_online", "dim_perfil"],
+    tags: ["perfil"],
+    columnas: [["Owner", perfil.nombre], ["Tipo", "application"]],
+    links: [["Contacto", `mailto:${perfil.email}`]],
+  },
+];
+
+// Layout: columnas por capa, filas en el orden de la lista. Medidas en px del SVG.
+const NODE_W = 216;
+const NODE_H = 40;
+const COL_GAP = 68;
+const ROW_GAP = 22;
+// Orden vertical dentro de cada columna, elegido para que se crucen pocas aristas.
+const ORDEN = [
+  "datyo.trabajo", "pasantias.infocontrol", "unsj.sistemas", "pasantias.wes", "pasantias.unsj_computos", "examen.ingles",
+  "stg_bi", "stg_sql", "stg_python", "stg_web", "stg_qa", "stg_soporte", "stg_ingles",
+  "int_modelado_datos", "int_backend", "int_frontend_interactivo",
+  "fct_tesis_sube", "fct_datyo", "fct_tienda_online", "fct_experimentos_amine", "fct_espacioamine", "dim_perfil",
+  "licenciatura", "trabajo_datyo", "web_elargot", "portfolio",
+];
+const porCapa = new Map<number, Nodo[]>();
+[...nodos]
+  .sort((a, b) => ORDEN.indexOf(a.id) - ORDEN.indexOf(b.id))
+  .forEach((n) => porCapa.set(n.capa, [...(porCapa.get(n.capa) ?? []), n]));
+const maxFilas = Math.max(...[...porCapa.values()].map((c) => c.length));
+const altoTotal = maxFilas * (NODE_H + ROW_GAP) - ROW_GAP;
+const pos = new Map<string, { x: number; y: number }>();
+porCapa.forEach((col, capa) => {
+  const alto = col.length * (NODE_H + ROW_GAP) - ROW_GAP;
+  const y0 = (altoTotal - alto) / 2;
+  col.forEach((n, i) => pos.set(n.id, { x: capa * (NODE_W + COL_GAP), y: y0 + i * (NODE_H + ROW_GAP) }));
+});
+const PAD = 24;
+const W = (porCapa.size - 1) * (NODE_W + COL_GAP) + NODE_W + PAD * 2;
+const H = altoTotal + PAD * 2;
+
+const aristas = nodos.flatMap((n) =>
+  n.deps.map((d) => {
+    const a = pos.get(d)!;
+    const b = pos.get(n.id)!;
+    const x1 = a.x + NODE_W + PAD;
+    const y1 = a.y + NODE_H / 2 + PAD;
+    const x2 = b.x + PAD;
+    const y2 = b.y + NODE_H / 2 + PAD;
+    const mx = (x1 + x2) / 2;
+    return { from: d, to: n.id, d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}` };
+  }),
+);
+
+const CAPAS = ["Fuentes", "Staging", "Intermedios", "Marts", "Exposures"];
+const presets = ["+fct_datyo", "fct_experimentos_amine", "+fct_tienda_online", "unsj.sistemas+", "tag:datos", "tag:web"];
 ---
 
-<Layout title="Nacho Colomé - Portfolio">
-  <Nav />
-  <Home />
-  <Experience />
-  <Projects />
-  <Contact />
-  <Footer />
-  <ViewSwitcher actual="clasica" />
-</Layout>
+<ViewLayout
+  title="Ignacio Colomé · Datos y Web"
+  description="La carrera de Ignacio Colomé como un grafo de linaje de dbt: de la formación a los trabajos y proyectos."
+  vista="linaje"
+>
+  <div class="ln">
+    <header class="ln-top">
+      <p class="ln-proj"><span>proyecto</span> ignacio_colome</p>
+      <h1>Linaje</h1>
+      <p class="ln-help">Soy {perfil.nombre}, {perfil.rol.toLowerCase()} en {perfil.ubicacion}. Cada trabajo y proyecto depende de lo que vino antes. Tocá un nodo para ver su documentación.</p>
+    </header>
+
+    <form class="ln-select" data-select-form role="search">
+      <label for="ln-q"><code>--select</code></label>
+      <input id="ln-q" name="q" autocomplete="off" spellcheck="false" placeholder="+fct_datyo, tag:web, unsj.sistemas+" />
+      <button type="submit">Aplicar</button>
+      <button type="button" data-clear>Todo</button>
+      <div class="ln-presets" aria-label="Ejemplos">
+        {presets.map((p) => <button type="button" data-preset={p}><code>{p}</code></button>)}
+      </div>
+      <p class="ln-status" data-status aria-live="polite"></p>
+    </form>
+
+    <div class="ln-stage">
+      <div class="ln-canvas" data-canvas tabindex="0" aria-label="Grafo de linaje; se desplaza horizontalmente">
+        <svg width={W} height={H + 28} viewBox={`0 0 ${W} ${H + 28}`} role="group" aria-label="Grafo de linaje">
+          <g class="ln-cols">
+            {CAPAS.map((c, i) => <text x={PAD + i * (NODE_W + COL_GAP)} y={H + 20}>{c}</text>)}
+          </g>
+          <g class="ln-edges">
+            {aristas.map((a) => <path d={a.d} data-from={a.from} data-to={a.to} />)}
+          </g>
+          <g class="ln-nodes">
+            {
+              nodos.map((n) => {
+                const p = pos.get(n.id)!;
+                return (
+                  <g
+                    class={`ln-node ln-${n.tipo}`}
+                    data-node={n.id}
+                    transform={`translate(${p.x + PAD},${p.y + PAD})`}
+                    tabindex="0"
+                    role="button"
+                    aria-label={`${n.id}: ${n.titulo}`}
+                  >
+                    <rect width={NODE_W} height={NODE_H} rx="6" />
+                    <text x="12" y="25">{n.id}</text>
+                  </g>
+                );
+              })
+            }
+          </g>
+        </svg>
+      </div>
+
+      <aside class="ln-panel" data-panel hidden aria-live="polite">
+        <button type="button" class="ln-close" data-close aria-label="Cerrar documentación">✕</button>
+        <div data-panel-body></div>
+      </aside>
+    </div>
+
+    <ul class="ln-legend" aria-label="Referencias">
+      <li><i class="ln-sw ln-source"></i>source</li>
+      <li><i class="ln-sw ln-model"></i>model</li>
+      <li><i class="ln-sw ln-exposure"></i>exposure</li>
+    </ul>
+  </div>
+
+  <script type="application/json" id="ln-data" set:html={JSON.stringify(nodos)} />
+</ViewLayout>
+
+<style is:global>
+  .ln {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --ink: #1c2033;
+    --ink-2: #555a6e;
+    --line: #dcdde3;
+    --edge: #b9bcc7;
+    --c-source: #2f7d1f;
+    --c-model: #00728a;
+    --c-exposure: #c2410c;
+    --hi: #ff694b;
+    min-height: 100vh;
+    background: var(--bg);
+    background-image: radial-gradient(#d6d7dc 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .ln {
+      --bg: #13151c;
+      --surface: #1b1e27;
+      --ink: #eceef4;
+      --ink-2: #a3a8b8;
+      --line: #2c303c;
+      --edge: #4a4f5e;
+      --c-source: #3c8f2a;
+      --c-model: #0b7f99;
+      --c-exposure: #c9501c;
+      background-image: radial-gradient(#262a35 1px, transparent 1px);
+    }
+  }
+  body:has(.ln) {
+    background: #f7f7f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    body:has(.ln) {
+      background: #13151c;
+    }
+  }
+  .ln :focus-visible {
+    outline: 2px solid var(--hi);
+    outline-offset: 2px;
+  }
+  .ln button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .ln code {
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  .ln-top {
+    padding: 24px 24px 8px;
+    max-width: 900px;
+  }
+  @media (max-width: 767px) {
+    .ln-top {
+      padding-right: 180px;
+    }
+  }
+  .ln-proj {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .ln-proj span {
+    color: var(--hi);
+  }
+  .ln-top h1 {
+    font-size: 30px;
+    font-weight: 650;
+    margin: 4px 0;
+  }
+  .ln-help {
+    color: var(--ink-2);
+  }
+  .ln-select {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+  }
+  .ln-select label {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .ln-select input {
+    flex: 1 1 260px;
+    min-height: 40px;
+    padding: 0 12px;
+    font: 14px ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .ln-select > button {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .ln-select > button[type="submit"] {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .ln-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .ln-presets button {
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px dashed var(--line);
+    background: transparent;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .ln-presets button:hover {
+    border-color: var(--hi);
+    color: var(--ink);
+  }
+  .ln-status {
+    width: 100%;
+    font-size: 12px;
+    color: var(--ink-2);
+    min-height: 1em;
+  }
+  .ln-stage {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+  }
+  .ln-canvas {
+    flex: 1;
+    overflow: auto;
+    padding: 8px 0 24px;
+    cursor: grab;
+  }
+  .ln-canvas.is-dragging {
+    cursor: grabbing;
+  }
+  .ln-canvas svg {
+    display: block;
+    margin: 0 auto;
+  }
+  .ln-cols text {
+    fill: var(--ink-2);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .ln-edges path {
+    fill: none;
+    stroke: var(--edge);
+    stroke-width: 1.5;
+    transition: stroke 0.2s, opacity 0.2s;
+  }
+  .ln-edges path.is-hi {
+    stroke: var(--hi);
+    stroke-width: 2;
+  }
+  .ln-node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .ln-node rect {
+    stroke: transparent;
+    stroke-width: 2;
+  }
+  .ln-node text {
+    fill: #fff;
+    font: 600 13px ui-monospace, "Cascadia Code", Consolas, monospace;
+    pointer-events: none;
+  }
+  .ln-source rect { fill: var(--c-source); }
+  .ln-model rect { fill: var(--c-model); }
+  .ln-exposure rect { fill: var(--c-exposure); }
+  .ln-node:hover rect,
+  .ln-node.is-active rect {
+    stroke: var(--hi);
+  }
+  .ln.has-focus .ln-node:not(.is-on),
+  .ln.has-focus .ln-edges path:not(.is-hi) {
+    opacity: 0.18;
+  }
+  .ln-panel {
+    width: 380px;
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    position: sticky;
+    top: 24px;
+    margin: 8px 24px 24px 0;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px #0000001f;
+  }
+  @media (max-width: 900px) {
+    .ln-panel {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: auto;
+      width: auto;
+      max-height: 62vh;
+      margin: 0;
+      border-radius: 16px 16px 0 0;
+      z-index: 1100;
+    }
+  }
+  .ln-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: none;
+    font-size: 16px;
+  }
+  .ln-panel .ln-kind {
+    font: 12px ui-monospace, Consolas, monospace;
+    color: var(--ink-2);
+  }
+  .ln-panel h2 {
+    font: 650 17px ui-monospace, "Cascadia Code", Consolas, monospace;
+    margin: 4px 40px 2px 0;
+    word-break: break-all;
+  }
+  .ln-panel h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-2);
+    margin: 16px 0 6px;
+  }
+  .ln-panel p {
+    line-height: 1.55;
+  }
+  .ln-panel .ln-sub {
+    color: var(--ink-2);
+    margin-bottom: 8px;
+  }
+  .ln-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .ln-panel td {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .ln-panel td:first-child {
+    width: 34%;
+    font-family: ui-monospace, Consolas, monospace;
+    color: var(--ink-2);
+    padding-right: 8px;
+  }
+  .ln-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ln-refs button {
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    font: 12px ui-monospace, Consolas, monospace;
+  }
+  .ln-panel pre {
+    padding: 12px;
+    border-radius: 6px;
+    background: #1c2033;
+    color: #e4e6ee;
+    font: 12px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace;
+    overflow-x: auto;
+  }
+  .ln-panel pre .k { color: #ff9b7f; }
+  .ln-panel pre .s { color: #9fd98a; }
+  .ln-panel a {
+    color: var(--c-model);
+    display: inline-block;
+    padding: 6px 0;
+    margin-right: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .ln-panel a {
+      color: #5cc3dc;
+    }
+  }
+  .ln-legend {
+    list-style: none;
+    display: flex;
+    gap: 16px;
+    padding: 0 24px 32px;
+    margin: 0;
+    font: 12px ui-monospace, Consolas, monospace;
+    color: var(--ink-2);
+  }
+  .ln-legend li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ln-sw {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .ln-sw.ln-source { background: var(--c-source); }
+  .ln-sw.ln-model { background: var(--c-model); }
+  .ln-sw.ln-exposure { background: var(--c-exposure); }
+</style>
+
+<script>
+  interface Nodo {
+    id: string;
+    tipo: "source" | "model" | "exposure";
+    titulo: string;
+    descripcion: string;
+    deps: string[];
+    tags: string[];
+    columnas: [string, string][];
+    links?: [string, string][];
+  }
+
+  const nodos: Nodo[] = JSON.parse(document.getElementById("ln-data")!.textContent!);
+  const byId = new Map(nodos.map((n) => [n.id, n]));
+  const hijos = new Map<string, string[]>();
+  nodos.forEach((n) => n.deps.forEach((d) => hijos.set(d, [...(hijos.get(d) ?? []), n.id])));
+
+  const root = document.querySelector<HTMLElement>(".ln")!;
+  const panel = document.querySelector<HTMLElement>("[data-panel]")!;
+  const body = document.querySelector<HTMLElement>("[data-panel-body]")!;
+  const input = document.querySelector<HTMLInputElement>("#ln-q")!;
+  const status = document.querySelector<HTMLElement>("[data-status]")!;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+  function walk(id: string, next: (id: string) => string[], out = new Set<string>()) {
+    for (const n of next(id)) {
+      if (!out.has(n)) {
+        out.add(n);
+        walk(n, next, out);
+      }
+    }
+    return out;
+  }
+  const ancestros = (id: string) => walk(id, (x) => byId.get(x)?.deps ?? []);
+  const descendientes = (id: string) => walk(id, (x) => hijos.get(x) ?? []);
+
+  /** Sintaxis de selección de dbt: nombre, +nombre, nombre+, +nombre+, tag:x; varias separadas por espacio o coma. */
+  function seleccionar(q: string): Set<string> | null {
+    const partes = q.split(/[\s,]+/).filter(Boolean);
+    if (!partes.length) return null;
+    const out = new Set<string>();
+    for (const p of partes) {
+      if (p.startsWith("tag:")) {
+        nodos.filter((n) => n.tags.includes(p.slice(4))).forEach((n) => out.add(n.id));
+        continue;
+      }
+      const up = p.startsWith("+");
+      const down = p.endsWith("+");
+      const name = p.replace(/^\+|\+$/g, "");
+      const matches = nodos.filter((n) => n.id === name || n.id.includes(name));
+      matches.forEach((n) => {
+        out.add(n.id);
+        if (up) ancestros(n.id).forEach((x) => out.add(x));
+        if (down) descendientes(n.id).forEach((x) => out.add(x));
+      });
+    }
+    return out;
+  }
+
+  function pintar(sel: Set<string> | null, activo: string | null = null) {
+    root.classList.toggle("has-focus", !!sel);
+    document.querySelectorAll<SVGGElement>("[data-node]").forEach((g) => {
+      const id = g.dataset.node!;
+      g.classList.toggle("is-on", !!sel?.has(id));
+      g.classList.toggle("is-active", id === activo);
+    });
+    document.querySelectorAll<SVGPathElement>(".ln-edges path").forEach((p) => {
+      p.classList.toggle("is-hi", !!sel && sel.has(p.dataset.from!) && sel.has(p.dataset.to!));
+    });
+  }
+
+  function aplicar(q: string) {
+    const sel = seleccionar(q);
+    pintar(sel);
+    status.textContent = sel === null ? "" : sel.size ? `${sel.size} nodos seleccionados` : "Nada coincide con esa selección.";
+  }
+
+  function codigo(n: Nodo) {
+    if (n.tipo === "source") {
+      const [src, tabla] = n.id.split(".");
+      return `<span class="k">sources</span>:\n  - name: ${esc(src)}\n    tables:\n      - name: ${esc(tabla)}`;
+    }
+    if (n.tipo === "exposure") {
+      return `<span class="k">exposures</span>:\n  - name: ${esc(n.id)}\n    type: ${esc(n.columnas.find(([k]) => k === "Tipo")?.[1] ?? "application")}\n    depends_on:\n${n.deps.map((d) => `      - ref(<span class="s">'${esc(d)}'</span>)`).join("\n")}`;
+    }
+    const refs = n.deps.map((d) => {
+      const s = byId.get(d)!;
+      return s.tipo === "source" ? `{{ source(<span class="s">'${esc(d.split(".")[0])}'</span>, <span class="s">'${esc(d.split(".")[1])}'</span>) }}` : `{{ ref(<span class="s">'${esc(d)}'</span>) }}`;
+    });
+    return `<span class="k">select</span> *\n<span class="k">from</span> ${refs[0] ?? ""}${refs
+      .slice(1)
+      .map((r) => `\n<span class="k">join</span> ${r} <span class="k">using</span> (experiencia)`)
+      .join("")}`;
+  }
+
+  function abrir(id: string) {
+    const n = byId.get(id);
+    if (!n) return;
+    const sel = new Set([id, ...ancestros(id), ...descendientes(id)]);
+    pintar(sel, id);
+    input.value = `+${id}+`;
+    status.textContent = `${sel.size} nodos en el linaje de ${id}`;
+    const refsBy = hijos.get(id) ?? [];
+    const btns = (ids: string[]) =>
+      ids.length ? `<div class="ln-refs">${ids.map((x) => `<button type="button" data-goto="${esc(x)}">${esc(x)}</button>`).join("")}</div>` : `<p class="ln-sub">—</p>`;
+    body.innerHTML = `
+      <p class="ln-kind">${n.tipo}${n.tags.length ? ` · ${n.tags.map(esc).join(", ")}` : ""}</p>
+      <h2>${esc(n.id)}</h2>
+      <p class="ln-sub">${esc(n.titulo)}</p>
+      <p>${esc(n.descripcion)}</p>
+      ${n.columnas.length ? `<h3>Columnas</h3><table>${n.columnas.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>` : ""}
+      ${n.links?.length ? `<h3>Enlaces</h3><p>${n.links.map(([k, h]) => `<a href="${esc(h)}" target="_blank" rel="noopener">${esc(k)} ↗</a>`).join("")}</p>` : ""}
+      <h3>Depende de</h3>${btns(n.deps)}
+      <h3>Lo usan</h3>${btns(refsBy)}
+      <h3>Código</h3><pre>${codigo(n)}</pre>`;
+    panel.hidden = false;
+    body.querySelectorAll<HTMLButtonElement>("[data-goto]").forEach((b) => b.addEventListener("click", () => abrir(b.dataset.goto!)));
+  }
+
+  function cerrar() {
+    panel.hidden = true;
+    aplicar(input.value);
+  }
+
+  document.querySelectorAll<SVGGElement>("[data-node]").forEach((g) => {
+    const id = g.dataset.node!;
+    g.addEventListener("click", () => {
+      if (!moved) abrir(id);
+    });
+    g.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        abrir(id);
+      }
+    });
+    g.addEventListener("pointerenter", () => {
+      if (panel.hidden && !input.value) pintar(new Set([id, ...ancestros(id), ...descendientes(id)]), id);
+    });
+    g.addEventListener("pointerleave", () => {
+      if (panel.hidden && !input.value) pintar(null);
+    });
+  });
+
+  document.querySelector("[data-close]")!.addEventListener("click", cerrar);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !panel.hidden) cerrar();
+  });
+  document.querySelector<HTMLFormElement>("[data-select-form]")!.addEventListener("submit", (e) => {
+    e.preventDefault();
+    panel.hidden = true;
+    aplicar(input.value);
+  });
+  document.querySelector("[data-clear]")!.addEventListener("click", () => {
+    input.value = "";
+    panel.hidden = true;
+    aplicar("");
+  });
+  document.querySelectorAll<HTMLButtonElement>("[data-preset]").forEach((b) =>
+    b.addEventListener("click", () => {
+      input.value = b.dataset.preset!;
+      panel.hidden = true;
+      aplicar(input.value);
+    }),
+  );
+
+  // Arrastrar para desplazar el grafo con el mouse (en touch ya scrollea solo).
+  const canvas = document.querySelector<HTMLElement>("[data-canvas]")!;
+  let drag: { x: number; y: number; sl: number; st: number } | null = null;
+  let moved = false;
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse") return;
+    drag = { x: e.clientX, y: e.clientY, sl: canvas.scrollLeft, st: scrollY };
+    moved = false;
+  });
+  addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 4) {
+      moved = true;
+      canvas.classList.add("is-dragging");
+    }
+    canvas.scrollLeft = drag.sl - dx;
+  });
+  addEventListener("pointerup", () => {
+    drag = null;
+    canvas.classList.remove("is-dragging");
+    setTimeout(() => (moved = false));
+  });
+</script>
