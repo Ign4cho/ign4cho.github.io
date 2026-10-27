@@ -1,0 +1,155 @@
+---
+// Fondo de la portada clásica: una red de nodos (como la de trasbordos de la
+// tesis) con pulsos que viajan por las aristas. El mouse empuja los nodos y
+// enciende las aristas cercanas. Con reduced motion se dibuja un solo cuadro.
+---
+
+<canvas class="hero-net" data-hero-net aria-hidden="true"></canvas>
+
+<style>
+  .hero-net {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 100vw;
+    height: 100%;
+    transform: translateX(-50%);
+    z-index: -1;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(#000 55%, transparent);
+    mask-image: linear-gradient(#000 55%, transparent);
+  }
+</style>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>("[data-hero-net]");
+  const ctx = canvas?.getContext("2d");
+  if (canvas && ctx) {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const SEC = "164, 118, 255"; // --sec
+    const RADIO = 160; // alcance del mouse en px
+    type Nodo = { x: number; y: number; ox: number; oy: number; r: number; fase: number };
+    type Pulso = { a: number; b: number; t: number; v: number };
+    let nodos: Nodo[] = [];
+    let aristas: [number, number][] = [];
+    let pulsos: Pulso[] = [];
+    let w = 0;
+    let h = 0;
+    let mx = -1e4;
+    let my = -1e4;
+    let visible = true;
+
+    // Generador con semilla: la red es siempre la misma para un mismo tamaño.
+    let semilla = 7;
+    const rnd = () => ((semilla = (semilla * 16807) % 2147483647) / 2147483647);
+
+    function armar() {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      w = canvas!.clientWidth;
+      h = canvas!.clientHeight;
+      canvas!.width = w * dpr;
+      canvas!.height = h * dpr;
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      semilla = 7;
+      const n = Math.round(Math.min(70, Math.max(24, (w * h) / 22000)));
+      nodos = Array.from({ length: n }, () => {
+        const x = rnd() * w;
+        const y = rnd() * h;
+        return { x, y, ox: x, oy: y, r: 1.2 + rnd() * rnd() * 4.5, fase: rnd() * Math.PI * 2 };
+      });
+      // Cada nodo se une a sus dos vecinos más cercanos.
+      const set = new Set<string>();
+      aristas = [];
+      nodos.forEach((p, i) => {
+        nodos
+          .map((q, j) => ({ j, d: (p.x - q.x) ** 2 + (p.y - q.y) ** 2 }))
+          .filter((o) => o.j !== i)
+          .sort((a, b) => a.d - b.d)
+          .slice(0, 2)
+          .forEach(({ j }) => {
+            const k = i < j ? `${i}-${j}` : `${j}-${i}`;
+            if (!set.has(k)) {
+              set.add(k);
+              aristas.push([i, j]);
+            }
+          });
+      });
+      pulsos = [];
+    }
+
+    function dibujar(t: number) {
+      ctx!.clearRect(0, 0, w, h);
+      for (const p of nodos) {
+        // Deriva suave alrededor del origen y empuje del mouse.
+        const tx = p.ox + Math.cos(t / 3200 + p.fase) * 10;
+        const ty = p.oy + Math.sin(t / 2700 + p.fase) * 10;
+        const dx = tx - mx;
+        const dy = ty - my;
+        const d = Math.hypot(dx, dy);
+        const f = d < RADIO ? ((RADIO - d) / RADIO) * 34 : 0;
+        p.x += (tx + (dx / (d || 1)) * f - p.x) * 0.08;
+        p.y += (ty + (dy / (d || 1)) * f - p.y) * 0.08;
+      }
+      const cerca = (x: number, y: number) => Math.max(0, 1 - Math.hypot(x - mx, y - my) / (RADIO * 1.6));
+      ctx!.lineWidth = 1;
+      for (const [i, j] of aristas) {
+        const a = nodos[i];
+        const b = nodos[j];
+        const k = cerca((a.x + b.x) / 2, (a.y + b.y) / 2);
+        ctx!.strokeStyle = k > 0 ? `rgba(${SEC}, ${0.12 + k * 0.55})` : "rgba(255, 255, 255, 0.07)";
+        ctx!.beginPath();
+        ctx!.moveTo(a.x, a.y);
+        ctx!.lineTo(b.x, b.y);
+        ctx!.stroke();
+      }
+      for (const p of nodos) {
+        const k = cerca(p.x, p.y);
+        ctx!.fillStyle = k > 0 ? `rgba(${SEC}, ${0.35 + k * 0.6})` : "rgba(255, 255, 255, 0.22)";
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.r + k * 2, 0, Math.PI * 2);
+        ctx!.fill();
+      }
+      // Pulsos: un «trasbordo» que viaja de un nodo a otro.
+      if (!reduce && pulsos.length < 14 && rnd() < 0.08) {
+        const [a, b] = aristas[Math.floor(rnd() * aristas.length)];
+        pulsos.push(rnd() < 0.5 ? { a, b, t: 0, v: 0.006 + rnd() * 0.01 } : { a: b, b: a, t: 0, v: 0.006 + rnd() * 0.01 });
+      }
+      ctx!.fillStyle = `rgba(${SEC}, 0.9)`;
+      pulsos = pulsos.filter((q) => (q.t += q.v) < 1);
+      for (const q of pulsos) {
+        const a = nodos[q.a];
+        const b = nodos[q.b];
+        ctx!.beginPath();
+        ctx!.arc(a.x + (b.x - a.x) * q.t, a.y + (b.y - a.y) * q.t, 1.8, 0, Math.PI * 2);
+        ctx!.fill();
+      }
+    }
+
+    function loop(t: number) {
+      if (visible) dibujar(t);
+      requestAnimationFrame(loop);
+    }
+
+    armar();
+    if (reduce) {
+      dibujar(0);
+    } else {
+      requestAnimationFrame(loop);
+      new IntersectionObserver(([e]) => (visible = e.isIntersecting)).observe(canvas);
+      addEventListener("pointermove", (e) => {
+        const r = canvas.getBoundingClientRect();
+        mx = e.clientX - r.left;
+        my = e.clientY - r.top;
+      });
+      document.addEventListener("pointerleave", () => (mx = my = -1e4));
+    }
+    let timer = 0;
+    addEventListener("resize", () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        armar();
+        if (reduce) dibujar(0);
+      }, 150);
+    });
+  }
+</script>

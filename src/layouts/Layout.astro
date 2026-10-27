@@ -57,8 +57,17 @@ const base = import.meta.env.BASE_URL;
       }
     </script>
   </head>
-  <body class="bg-[--background] sm:px-28 lg:px-20 px-9">
+  <body class="bg-[--background] sm:px-28 lg:px-20 px-9 overflow-x-clip">
     <slot />
+    <script>
+      document.addEventListener("pointermove", (e) => {
+        const el = e.target instanceof Element ? e.target.closest<HTMLElement>(".spot") : null;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        el.style.setProperty("--my", `${e.clientY - r.top}px`);
+      });
+    </script>
   </body>
 </html>
 
@@ -89,6 +98,36 @@ const base = import.meta.env.BASE_URL;
     box-sizing: border-box;
     padding: 0;
     margin: 0;
+  }
+
+  /* Grano sobre toda la página */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  /* Luz que sigue al mouse en tarjetas (.spot); las variables las mueve el script de abajo */
+  .spot {
+    position: relative;
+  }
+  .spot::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(164, 118, 255, 0.16), transparent 60%);
+  }
+  .spot:hover::before {
+    opacity: 1;
   }
 
   *::selection {
