@@ -233,9 +233,9 @@ export const charlas = [
 
 // Vistas del portfolio, en el orden del selector.
 export const vistas = [
-  { id: "linaje", nombre: "Linaje dbt", detalle: "La carrera como grafo de modelos", href: "" },
+  { id: "bento", nombre: "Bento", detalle: "Todo en una grilla, de un vistazo", href: "" },
+  { id: "linaje", nombre: "Linaje dbt", detalle: "La carrera como grafo de modelos", href: "linaje/" },
   { id: "clasica", nombre: "Clásica", detalle: "Oscura, para leer de corrido", href: "clasica/" },
-  { id: "bento", nombre: "Bento", detalle: "Todo en una grilla, de un vistazo", href: "bento/" },
   { id: "dashboard", nombre: "Dashboard", detalle: "El portfolio como informe de Power BI", href: "dashboard/" },
   { id: "terminal", nombre: "Terminal SQL", detalle: "Consultas sobre el portfolio", href: "terminal/" },
 ];

@@ -17,6 +17,10 @@ export default defineConfig({
     },
   },
   output: "static",
+  // Bento pasó a la raíz: el link viejo redirige.
+  redirects: {
+    "/bento": "/",
+  },
   build: {
     inlineStylesheets: "auto",
   },
