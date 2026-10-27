@@ -2,6 +2,7 @@
 // Vista «Bento»: todo el portfolio en una grilla de bloques de distintos
 // tamaños, para leerlo de un vistazo. Contenido de perfil.ts.
 import ViewLayout from "@/layouts/ViewLayout.astro";
+import MensajeForm from "@/components/MensajeForm.astro";
 import { perfil, experiencia, proyectos, habilidades, estudios, vistas, AREAS, meses, periodo } from "@/data/perfil";
 
 const base = import.meta.env.BASE_URL;
@@ -140,11 +141,14 @@ const tarjetas = [
         </ul>
       </section>
 
-      <a class="bt-c b-contacto" href={`mailto:${perfil.email}`}>
-        <p class="bt-k">¿Hablamos?</p>
-        <p class="bt-mail">{perfil.email}</p>
-        <span class="bt-arrow" aria-hidden="true">↗</span>
-      </a>
+      <section class="bt-c b-contacto" aria-labelledby="bt-contacto-t">
+        <div>
+          <p class="bt-k">¿Hablamos?</p>
+          <h2 id="bt-contacto-t" class="bt-contacto-t">¿Tenés un proyecto en mente? Escribime.</h2>
+          <a class="bt-mail" href={`mailto:${perfil.email}`}>{perfil.email} ↗</a>
+        </div>
+        <MensajeForm />
+      </section>
 
       <nav class="bt-c b-vistas" aria-label="Otras vistas">
         <p class="bt-k">Otras vistas</p>
@@ -621,31 +625,41 @@ const tarjetas = [
 
   /* Contacto */
   .b-contacto {
-    display: block;
-    text-decoration: none;
+    display: grid;
+    gap: 20px;
+    align-items: start;
     background: var(--lila);
     color: #0b0b0d;
     border-color: transparent;
+    --mf-bg: #ffffff59;
+    --mf-ink: #0b0b0d;
+    --mf-ink-2: #0b0b0dc0;
+    --mf-line: #0b0b0d26;
+    --mf-accent: #0b0b0d;
+    --mf-accent-ink: #f2f2ee;
+    --mf-radius: 14px;
+  }
+  @media (min-width: 1024px) {
+    .b-contacto {
+      grid-template-columns: 1fr 1.2fr;
+      gap: 40px;
+    }
   }
   .b-contacto .bt-k {
     color: #0b0b0dad;
   }
-  .bt-mail {
-    margin: 0;
-    font-size: clamp(22px, 3vw, 34px);
+  .bt-contacto-t {
+    margin: 0 0 12px;
+    font-size: clamp(26px, 3.4vw, 44px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     font-weight: 700;
-    letter-spacing: -0.02em;
+  }
+  .bt-mail {
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 3px;
     word-break: break-all;
-  }
-  .bt-arrow {
-    position: absolute;
-    right: 22px;
-    top: 16px;
-    font-size: 28px;
-    transition: transform 0.3s;
-  }
-  .b-contacto:hover .bt-arrow {
-    transform: translate(4px, -4px);
   }
 
   /* Otras vistas */

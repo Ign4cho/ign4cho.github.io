@@ -1,0 +1,105 @@
+---
+// Formulario de mensaje por mail (Web3Forms), el mismo de la vista clásica.
+// Cada vista lo tiñe con variables: --mf-bg, --mf-ink, --mf-ink-2, --mf-line,
+// --mf-accent, --mf-accent-ink y --mf-radius. El envío se maneja por delegación,
+// así funciona aunque el formulario se inserte después (panel del linaje).
+---
+
+<form class="mf" data-mensaje-form action="https://api.web3forms.com/submit" method="POST">
+  <input type="hidden" name="access_key" value="5b8ae55d-7dcd-474f-b63c-f98d4b65bcf4" />
+  <input type="hidden" name="subject" value="Nuevo mensaje desde tu portfolio" />
+  <input type="checkbox" name="botcheck" class="mf-bot" tabindex="-1" autocomplete="off" />
+  <label>
+    <span>Nombre</span>
+    <input type="text" name="from_name" autocomplete="name" required />
+  </label>
+  <label>
+    <span>Email</span>
+    <input type="email" name="reply_to" autocomplete="email" required />
+  </label>
+  <label>
+    <span>Mensaje</span>
+    <textarea name="message" rows="4" required></textarea>
+  </label>
+  <button type="submit">Enviar mensaje</button>
+  <p class="mf-estado" data-estado aria-live="polite"></p>
+</form>
+
+<style>
+  .mf {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+  }
+  .mf-bot {
+    display: none;
+  }
+  .mf label {
+    display: grid;
+    gap: 4px;
+  }
+  .mf label span {
+    font-size: 12px;
+    color: var(--mf-ink-2, #f2f2eea3);
+  }
+  .mf input,
+  .mf textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: var(--mf-radius, 10px);
+    border: 1px solid var(--mf-line, #ffffff1f);
+    background: var(--mf-bg, #ffffff0a);
+    color: var(--mf-ink, inherit);
+    font: inherit;
+    resize: vertical;
+  }
+  .mf input:focus-visible,
+  .mf textarea:focus-visible,
+  .mf button:focus-visible {
+    outline: 2px solid var(--mf-accent, #a476ff);
+    outline-offset: 1px;
+  }
+  .mf button {
+    min-height: 44px;
+    border: 0;
+    border-radius: var(--mf-radius, 10px);
+    background: var(--mf-accent, #a476ff);
+    color: var(--mf-accent-ink, #0b0b0d);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mf button:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .mf-estado {
+    margin: 0;
+    min-height: 1.2em;
+    font-size: 13px;
+    color: var(--mf-ink-2, #f2f2eea3);
+  }
+</style>
+
+<script>
+  document.addEventListener("submit", async (e) => {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches("[data-mensaje-form]")) return;
+    e.preventDefault();
+    const estado = form.querySelector<HTMLElement>("[data-estado]")!;
+    const boton = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    boton.disabled = true;
+    estado.textContent = "Enviando…";
+    try {
+      const res = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error(String(res.status));
+      form.reset();
+      estado.textContent = "✅ ¡Gracias por tu mensaje! Te respondo pronto.";
+    } catch {
+      estado.textContent = "No se pudo enviar. Probá de nuevo o escribime por mail.";
+    } finally {
+      boton.disabled = false;
+    }
+  });
+</script>

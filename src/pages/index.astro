@@ -3,6 +3,7 @@
 // (formación y experiencias) → staging (habilidades base) → intermedios → marts
 // (trabajos y proyectos) → exposures (licenciatura, Datyo, Elargot, portfolio).
 import ViewLayout from "@/layouts/ViewLayout.astro";
+import MensajeForm from "@/components/MensajeForm.astro";
 import { perfil, experiencia, proyectos, periodo } from "@/data/perfil";
 
 type Tipo = "source" | "model" | "exposure";
@@ -397,6 +398,12 @@ const presets = ["+fct_datyo", "fct_experimentos_amine", "+fct_tienda_online", "
     </ul>
   </div>
 
+  <!-- Formulario de mensaje: se copia al panel cuando se abre dim_perfil -->
+  <template id="ln-form">
+    <h3>Escribime</h3>
+    <div class="ln-form"><MensajeForm /></div>
+  </template>
+
   <script type="application/json" id="ln-data" set:html={JSON.stringify(nodos)} />
 </ViewLayout>
 
@@ -684,6 +691,15 @@ const presets = ["+fct_datyo", "fct_experimentos_amine", "+fct_tienda_online", "
     background: var(--bg);
     font: 12px ui-monospace, Consolas, monospace;
   }
+  .ln-form {
+    --mf-bg: var(--bg);
+    --mf-ink: var(--ink);
+    --mf-ink-2: var(--ink-2);
+    --mf-line: var(--line);
+    --mf-accent: var(--c-exposure);
+    --mf-accent-ink: #ffffff;
+    --mf-radius: 6px;
+  }
   .ln-panel pre {
     padding: 12px;
     border-radius: 6px;
@@ -845,6 +861,10 @@ const presets = ["+fct_datyo", "fct_experimentos_amine", "+fct_tienda_online", "
       <h3>Depende de</h3>${btns(n.deps)}
       <h3>Lo usan</h3>${btns(refsBy)}
       <h3>Código</h3><pre>${codigo(n)}</pre>`;
+    if (id === "dim_perfil") {
+      const tpl = document.querySelector<HTMLTemplateElement>("#ln-form");
+      if (tpl) body.querySelector("h2")!.nextElementSibling!.after(tpl.content.cloneNode(true));
+    }
     panel.hidden = false;
     body.querySelectorAll<HTMLButtonElement>("[data-goto]").forEach((b) => b.addEventListener("click", () => abrir(b.dataset.goto!)));
   }

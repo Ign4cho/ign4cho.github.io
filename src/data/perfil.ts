@@ -121,9 +121,9 @@ export const proyectos: Proyecto[] = [
     stack: ["Astro", "Node.js", "Fastify", "PostgreSQL", "MercadoPago"],
     imagen: "demo-elargot.jpg",
     codigo: null,
-    sitio: "https://demo.elargot.com",
+    sitio: "https://demo.elargot.com/?template=onyx&color=orange",
     extra: [
-      { label: "Tienda demo", href: "https://demo.elargot.com" },
+      { label: "Tienda demo", href: "https://demo.elargot.com/?template=onyx&color=orange" },
       { label: "Landing", href: "https://elargot.com" },
     ],
     destacado: true,
