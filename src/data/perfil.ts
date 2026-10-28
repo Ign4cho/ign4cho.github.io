@@ -241,7 +241,7 @@ export const vistas = [
   { id: "pliego", nombre: "Pliego 3D", detalle: "Un fanzine en dos tintas que se despliega con el scroll", href: "pliego/" },
   { id: "mesa", nombre: "Mesa", detalle: "Arrastrá los objetos y abrí lo que te interese", href: "mesa/" },
   { id: "editorial", nombre: "Editorial", detalle: "Revista sobria, pensada para selección de personal", href: "editorial/" },
-  { id: "sanjuan", nombre: "San Juan", detalle: "El viento Zonda mueve todo", href: "sanjuan/" },
+  { id: "sanjuan", nombre: "San Juan", detalle: "El Valle de la Luna de noche, con viento Zonda", href: "sanjuan/" },
 ];
 
 /** Mes del build, YYYY-MM: «actualidad» en las fechas. */

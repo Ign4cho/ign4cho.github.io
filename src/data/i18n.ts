@@ -114,7 +114,7 @@ const VISTAS_EN: Record<string, { nombre: string; detalle: string }> = {
   pliego: { nombre: "3D zine", detalle: "A two-ink zine that unfolds as you scroll" },
   mesa: { nombre: "Desk", detalle: "Drag the objects, open what you like" },
   editorial: { nombre: "Editorial", detalle: "Plain magazine, made for recruiters" },
-  sanjuan: { nombre: "San Juan", detalle: "The Zonda wind blows everything around" },
+  sanjuan: { nombre: "San Juan", detalle: "The Valley of the Moon at night, with Zonda wind" },
 };
 
 /** Todo el contenido de perfil.ts en el idioma pedido. */

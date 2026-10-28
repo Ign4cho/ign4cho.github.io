@@ -1,7 +1,8 @@
-// Viento Zonda de la vista San Juan. Un solo valor de viento (0 = calma,
-// 1 = Zonda pleno) mueve todo: las tarjetas colgadas se hamacan como péndulos,
-// las letras del título se inclinan, el polvo cruza la pantalla, el cielo se
-// pone ocre y las tecnologías de la caja (física con matter-js) salen volando.
+// Viento Zonda de la vista San Juan (Valle de la Luna). Un solo valor de viento
+// (0 = calma, 1 = Zonda pleno) mueve todo: las etiquetas de campo se hamacan como
+// péndulos, los estratos se corren, las letras del título se inclinan, el polvo
+// cruza la pantalla, el cielo se pone ocre y las bochas (física con matter-js)
+// ruedan por la cancha.
 //
 // El viento sube con el botón «Soplar el Zonda», con ráfagas chicas al azar y
 // al mover el mouse rápido. Con «reducir movimiento» no corre nada.
@@ -75,6 +76,8 @@ function iniciar() {
     fase: i * 1.7,
   }));
   const letras = [...root.querySelectorAll<HTMLElement>("[data-letra]")];
+  // Estratos: se corren de costado con el viento, cada uno un poco distinto (erosión).
+  const estratos = [...root.querySelectorAll<HTMLElement>("[data-deriva]")];
 
   // ── Polvo ─────────────────────────────────────────────────
   const cv = root.querySelector<HTMLCanvasElement>("[data-polvo]")!;
@@ -131,6 +134,10 @@ function iniciar() {
       // si la tarjeta está fuera de pantalla no hace falta tocar el DOM
       p.el.style.setProperty("--a", `${(p.a * 18).toFixed(2)}deg`);
     }
+    estratos.forEach((el, i) => {
+      const k = Number(el.dataset.deriva || 1);
+      el.style.setProperty("--dx", `${(viento * k * 26 + Math.sin(t * 1.3 + i) * viento * 6).toFixed(1)}px`);
+    });
     letras.forEach((el, i) => {
       const s = Math.sin(t * 3 + i * 0.6) * viento;
       el.style.transform = `translate(${(viento * 10 + s * 6).toFixed(1)}px, ${(s * -3).toFixed(1)}px) skewX(${(-viento * 14).toFixed(1)}deg)`;
@@ -164,7 +171,7 @@ function cajaFisica(caja: HTMLElement) {
   const { Engine, Bodies, Body, Composite, Mouse, MouseConstraint, Events } = Matter;
   const chips = [...caja.querySelectorAll<HTMLElement>("[data-chip]")];
   const engine = Engine.create({ gravity: { x: 0, y: 1, scale: 0.0012 } });
-  let cuerpos: { b: Matter.Body; el: HTMLElement; w: number; h: number }[] = [];
+  let cuerpos: { b: Matter.Body; el: HTMLElement; r: number }[] = [];
   let paredes: Matter.Body[] = [];
   let arrancado = false;
 
@@ -188,17 +195,16 @@ function cajaFisica(caja: HTMLElement) {
     caja.classList.add("sj-caja-viva");
     armarParedes();
     const w = caja.clientWidth;
+    // Bochas: cuerpos circulares del tamaño de cada piedra.
     cuerpos = chips.map((el, i) => {
-      const cw = el.offsetWidth;
-      const ch = el.offsetHeight;
-      const b = Bodies.rectangle(40 + Math.random() * (w - 80), -60 - i * 50, cw, ch, {
-        chamfer: { radius: ch / 2 },
-        restitution: 0.35,
-        friction: 0.4,
-        frictionAir: 0.012,
-        angle: (Math.random() - 0.5) * 0.6,
+      const r = el.offsetWidth / 2;
+      const b = Bodies.circle(r + Math.random() * (w - 2 * r), -60 - i * 60, r, {
+        restitution: 0.3,
+        friction: 0.08,
+        frictionAir: 0.008,
+        density: 0.002,
       });
-      return { b, el, w: cw, h: ch };
+      return { b, el, r };
     });
     Composite.add(engine.world, cuerpos.map((c) => c.b));
 
@@ -232,7 +238,7 @@ function cajaFisica(caja: HTMLElement) {
     paso(viento: number, dt: number) {
       if (!arrancado) return;
       // el viento empuja de izquierda a derecha y levanta un poco (con ráfagas)
-      const f = viento * viento * 0.0026;
+      const f = viento * viento * 0.0016;
       for (const { b } of cuerpos) {
         Body.applyForce(b, b.position, {
           x: f * b.mass * (0.7 + Math.random() * 0.6),
@@ -240,8 +246,9 @@ function cajaFisica(caja: HTMLElement) {
         });
       }
       Engine.update(engine, dt * 1000);
-      for (const { b, el, w, h } of cuerpos) {
-        el.style.transform = `translate(${(b.position.x - w / 2).toFixed(1)}px, ${(b.position.y - h / 2).toFixed(1)}px) rotate(${b.angle.toFixed(3)}rad)`;
+      for (const { b, el, r } of cuerpos) {
+        // sin rotar el elemento: el nombre queda derecho aunque la bocha ruede
+        el.style.transform = `translate(${(b.position.x - r).toFixed(1)}px, ${(b.position.y - r).toFixed(1)}px)`;
       }
     },
   };

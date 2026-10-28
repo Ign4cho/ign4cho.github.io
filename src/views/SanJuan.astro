@@ -1,8 +1,9 @@
 ---
-// Vista «San Juan»: el portfolio en el paisaje de San Juan, con física. Cerros,
-// viñedos y un viento Zonda que mueve todo: tarjetas colgadas que se hamacan,
-// polvo y tecnologías que se arrastran y salen volando (scripts/zonda.ts).
-// Colores de viña y cerro. Contenido de perfil.ts (vía i18n).
+// Vista «San Juan»: el portfolio en el Valle de la Luna (Ischigualasto), de noche
+// y con luna llena. El Hongo, El Submarino, la Cancha de Bochas y un viento Zonda
+// que mueve todo: estratos que se corren, etiquetas de campo que se hamacan,
+// polvo y tecnologías que ruedan como bochas (scripts/zonda.ts, matter-js).
+// Contenido de perfil.ts (vía i18n).
 import ViewLayout from "@/layouts/ViewLayout.astro";
 import MensajeForm from "@/components/MensajeForm.astro";
 import Indice from "@/components/Indice.astro";
@@ -21,20 +22,31 @@ const [nombre, apellido] = perfil.nombre.split(" ");
 const secciones = [
   { id: "sj-cielo", nombre: t(lang, "El valle", "The valley") },
   { id: "sj-quien", nombre: t(lang, "Quién soy", "About") },
-  { id: "sj-experiencia", nombre: t(lang, "Experiencia", "Experience") },
-  { id: "sj-proyectos", nombre: t(lang, "Proyectos", "Projects") },
-  { id: "sj-stack", nombre: "Stack" },
+  { id: "sj-experiencia", nombre: t(lang, "Estratos", "Strata") },
+  { id: "sj-proyectos", nombre: t(lang, "Hallazgos", "Finds") },
+  { id: "sj-stack", nombre: t(lang, "Cancha de bochas", "Bocce field") },
   { id: "sj-contacto", nombre: t(lang, "Contacto", "Contact") },
 ];
 const n = (i: number) => String(i).padStart(2, "0");
+// Estratos: de arriba (lo más nuevo) hacia abajo, cada uno con su color de roca.
+const CAPAS = ["#c98a5a", "#b7643f", "#d8cdb8", "#8d4a3a", "#a89a86"];
+// Diámetro de cada bocha según el largo del nombre.
+const diam = (s: string) => Math.round(Math.min(150, Math.max(72, 30 + s.length * 9.5)));
+// Estrellas fijas (posición pseudoaleatoria estable entre builds).
+const estrellas = Array.from({ length: 70 }, (_, i) => ({
+  x: (i * 37.7) % 100,
+  y: ((i * 53.3) % 55) + 1,
+  r: i % 7 === 0 ? 1.6 : i % 3 === 0 ? 1.1 : 0.7,
+  d: (i % 5) * 0.7,
+}));
 ---
 
 <ViewLayout
-  title={t(lang, "Ignacio Colomé · San Juan", "Ignacio Colomé · San Juan")}
+  title={t(lang, "Ignacio Colomé · Valle de la Luna", "Ignacio Colomé · Valley of the Moon")}
   description={t(
     lang,
-    "El portfolio de Ignacio Colomé en el paisaje de San Juan: cerros, viñedos y un viento Zonda que mueve todo.",
-    "Ignacio Colomé's portfolio in the San Juan landscape: mountains, vineyards and a Zonda wind that blows everything around.",
+    "El portfolio de Ignacio Colomé en el Valle de la Luna, San Juan: estratos, hallazgos, bochas y un viento Zonda que mueve todo.",
+    "Ignacio Colomé's portfolio in the Valley of the Moon, San Juan: strata, finds, bocce stones and a Zonda wind that blows everything around.",
   )}
   vista="sanjuan"
   lang={lang}
@@ -43,7 +55,7 @@ const n = (i: number) => String(i).padStart(2, "0");
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500&display=swap"
       rel="stylesheet"
     />
   </Fragment>
@@ -54,20 +66,42 @@ const n = (i: number) => String(i).padStart(2, "0");
 
     <section id="sj-cielo" class="sj-hero">
       <div class="sj-cielo" aria-hidden="true">
-        <span class="sj-sol"></span>
-        <svg class="sj-cerro sj-cerro-3" viewBox="0 0 1440 400" preserveAspectRatio="none">
-          <path d="M0 400V220l90-60 70 40 110-120 90 70 80-50 120 110 90-80 130 90 100-140 120 120 90-60 110 80 90-50 150 90v160Z" />
+        <svg class="sj-estrellas" viewBox="0 0 100 60" preserveAspectRatio="none">
+          {estrellas.map((e) => <circle cx={e.x} cy={e.y} r={e.r * 0.12} style={`animation-delay:${e.d}s`} />)}
         </svg>
-        <svg class="sj-cerro sj-cerro-2" viewBox="0 0 1440 400" preserveAspectRatio="none">
-          <path d="M0 400V270l120-70 100 50 140-110 120 100 110-40 150 90 120-110 160 120 130-70 120 60 150-50v260Z" />
+        <span class="sj-luna"></span>
+        <!-- Barrancas del fondo: los paredones rojos de Los Colorados -->
+        <svg class="sj-capa sj-capa-3" viewBox="0 0 1440 400" preserveAspectRatio="none">
+          <path d="M0 400V170h120l30-20h160l20 18h200l40-30h210l20 22h180l30-16h210l30 20h190v236Z" />
+          <path class="sj-veta" d="M0 230h1440M0 262h1440M0 300h1440" />
         </svg>
-        <svg class="sj-cerro sj-cerro-1" viewBox="0 0 1440 400" preserveAspectRatio="none">
-          <path d="M0 400V320l160-50 140 40 180-80 160 70 200-60 170 60 190-50 240 70v80Z" />
+        <!-- Lomas de arcilla gris («paisaje lunar») -->
+        <svg class="sj-capa sj-capa-2" viewBox="0 0 1440 400" preserveAspectRatio="none">
+          <path d="M0 400V280c60-30 110-34 170-12s120 20 180-6 140-30 210 0 120 26 190 2 150-28 220 4 130 22 190 0 90-16 130-6v138Z" />
         </svg>
-        <svg class="sj-vina" viewBox="0 0 1440 260" preserveAspectRatio="none">
+        <!-- El Submarino (izquierda) y El Hongo (derecha) -->
+        <svg class="sj-forma sj-submarino" viewBox="0 0 220 260">
+          <path d="M18 260 30 150c6-30 18-42 34-46l10-58c2-12 10-18 22-18h20c10 0 16 8 16 18l4 58c22 6 40 22 46 54l10 102Z" />
+          <path class="sj-veta" d="M26 200h168M24 228h172" />
+        </svg>
+        <svg class="sj-forma sj-hongo" viewBox="0 0 200 240">
+          <path d="M14 70c0-30 40-50 86-50s86 20 86 50c0 16-18 24-40 24h-24c-6 0-10 4-11 10l-6 116c0 8 4 14 10 20H85c6-6 10-12 10-20l-6-116c-1-6-5-10-11-10H54c-22 0-40-8-40-24Z" />
+          <path d="M60 240h80" />
+        </svg>
+        <!-- Suelo con la Cancha de Bochas -->
+        <svg class="sj-suelo" viewBox="0 0 1440 220" preserveAspectRatio="none">
+          <path d="M0 220V70c180-26 360-30 560-20s420 26 600 12 220-14 280-10v168Z" />
+        </svg>
+        <svg class="sj-bochas" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMax slice">
           {
-            Array.from({ length: 13 }, (_, i) => (
-              <path d={`M${720 + (i - 6) * 40} 0 L${720 + (i - 6) * 260} 260`} />
+            [
+              [180, 150, 26], [260, 170, 18], [330, 140, 14], [470, 182, 30], [560, 158, 12],
+              [880, 176, 22], [960, 150, 16], [1050, 188, 34], [1180, 160, 20], [1260, 178, 14],
+            ].map(([x, y, r]) => (
+              <g>
+                <ellipse cx={x} cy={y + r * 0.9} rx={r * 1.15} ry={r * 0.22} class="sj-sombra" />
+                <circle cx={x} cy={y} r={r} />
+              </g>
             ))
           }
         </svg>
@@ -75,7 +109,7 @@ const n = (i: number) => String(i).padStart(2, "0");
       </div>
 
       <div class="sj-hero-in">
-        <p class="sj-k">{perfil.ubicacion} · 31°32′S 68°31′O</p>
+        <p class="sj-k">Ischigualasto · {t(lang, "Valle de la Luna", "Valley of the Moon")} · San Juan</p>
         <h1 aria-label={perfil.nombre}>
           <span class="sj-linea" aria-hidden="true">{[...nombre].map((c) => <span data-letra>{c}</span>)}</span>
           <span class="sj-linea" aria-hidden="true">{[...apellido].map((c) => <span data-letra>{c}</span>)}</span>
@@ -83,14 +117,15 @@ const n = (i: number) => String(i).padStart(2, "0");
         <p class="sj-bajada">
           {t(
             lang,
-            "Analista de datos y desarrollador web. Desde el valle de Tulum: entre cerros, viñedos y un viento que cada tanto da vuelta todo.",
-            "Data analyst and web developer. From the Tulum valley: between mountains, vineyards and a wind that turns everything upside down every now and then.",
+            "Analista de datos y desarrollador web, de San Juan. Como en Ischigualasto, cada capa cuenta algo: la formación abajo, el trabajo arriba y los proyectos como hallazgos.",
+            "Data analyst and web developer from San Juan. Like in Ischigualasto, every layer tells something: education at the bottom, work on top and projects as finds.",
           )}
         </p>
         <div class="sj-clima" aria-live="off">
           <span>{t(lang, "Viento", "Wind")}: <b data-viento>{t(lang, "calma", "calm")}</b></span>
           <span><b data-vel>6</b> km/h</span>
           <span><b data-temp>24</b> °C</span>
+          <span>{t(lang, "Luna llena", "Full moon")}</span>
         </div>
         <button type="button" class="sj-btn" data-zonda aria-pressed="false">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
@@ -123,67 +158,86 @@ const n = (i: number) => String(i).padStart(2, "0");
 
       <section id="sj-experiencia" class="sj-sec">
         <p class="sj-k">{n(2)} · {t(lang, "Experiencia", "Experience")}</p>
-        <h2>{t(lang, "Colgado del alambre", "Hanging on the wire")}</h2>
-        <p class="sj-p sj-nota">{t(lang, "Como la uva en el parral: cada puesto, de su alambre.", "Like grapes on the trellis: each job hangs from its wire.")}</p>
-        <div class="sj-parral">
-          <span class="sj-alambre" aria-hidden="true"></span>
-          <ol>
-            {
-              experiencia.map((e, i) => (
-                <li class={`sj-colgada sj-${e.area}`} data-hamaca={String(1 + (i % 3) * 0.25)}>
-                  <span class="sj-clip" aria-hidden="true"></span>
-                  <p class="sj-fecha">{periodoL(lang, e.desde, e.hasta)}</p>
-                  <h3>{e.empresa}</h3>
-                  <p class="sj-rol">{e.rol}</p>
+        <h2>{t(lang, "Estratos", "Strata")}</h2>
+        <p class="sj-p sj-nota">
+          {t(
+            lang,
+            "Como en las barrancas del valle, se lee de abajo hacia arriba: cada puesto es una capa y la más nueva está arriba.",
+            "Like the valley's cliffs, it reads from the bottom up: each job is a layer and the newest is on top.",
+          )}
+        </p>
+        <ol class="sj-estratos">
+          {
+            experiencia.map((e, i) => (
+              <li class={`sj-estrato sj-${e.area}`} style={`--capa:${CAPAS[i % CAPAS.length]}`} data-deriva={String(1 - i * 0.18)}>
+                <p class="sj-fecha">{periodoL(lang, e.desde, e.hasta)}</p>
+                <div>
+                  <h3>
+                    {e.empresa} <span>· {e.rol}</span>
+                  </h3>
                   <p class="sj-desc">{e.descripcion}</p>
-                </li>
-              ))
-            }
-          </ol>
-        </div>
+                </div>
+              </li>
+            ))
+          }
+        </ol>
       </section>
 
       <section id="sj-proyectos" class="sj-sec">
         <p class="sj-k">{n(3)} · {t(lang, "Proyectos", "Projects")}</p>
-        <h2>{t(lang, "Cosecha 2026", "2026 vintage")}</h2>
-        <div class="sj-proy">
-          {
-            proyectos.map((p, i) => (
-              <article class="sj-cajon" data-hamaca={String(2.4 + i * 0.3)}>
-                {p.imagen && <img src={`${base}${p.imagen}`} alt="" loading="lazy" />}
-                <div class="sj-cajon-body">
+        <h2>{t(lang, "Hallazgos", "Finds")}</h2>
+        <p class="sj-p sj-nota">
+          {t(lang, "Cada uno con su etiqueta de campo, colgada de la cuadrícula de excavación.", "Each with its field tag, hanging from the excavation grid.")}
+        </p>
+        <div class="sj-grilla">
+          <span class="sj-cuerda" aria-hidden="true"></span>
+          <div class="sj-proy">
+            {
+              proyectos.map((p, i) => (
+                <article class="sj-hallazgo" data-hamaca={String(2.4 + i * 0.3)}>
+                  <span class="sj-clip" aria-hidden="true" />
                   <p class="sj-etiqueta">
-                    {AREAS[p.area]} · {t(lang, "Cosecha", "Vintage")} {p.anio}
+                    {t(lang, "Hallazgo", "Find")} n.º {String(i + 1).padStart(3, "0")} · {AREAS[p.area]} · {p.anio}
                   </p>
-                  <h3>{p.titulo}</h3>
-                  <p class="sj-desc">{p.descripcion}</p>
-                  <p class="sj-links">
-                    {conCaso.has(p.id) && <a href={ruta(lang, `casos/${p.id}/`)}>{t(lang, "El caso", "Case study")} →</a>}
-                    {(p.extra ?? (p.sitio ? [{ label: t(lang, "Sitio", "Site"), href: p.sitio }] : [])).map((l) => (
-                      <a href={l.href} target="_blank" rel="noopener">
-                        {l.label} ↗
-                      </a>
-                    ))}
-                  </p>
-                </div>
-              </article>
-            ))
-          }
+                  {p.imagen && <img src={`${base}${p.imagen}`} alt="" loading="lazy" />}
+                  <div class="sj-hallazgo-body">
+                    <h3>{p.titulo}</h3>
+                    <p class="sj-desc">{p.descripcion}</p>
+                    <p class="sj-links">
+                      {conCaso.has(p.id) && <a href={ruta(lang, `casos/${p.id}/`)}>{t(lang, "El caso", "Case study")} →</a>}
+                      {(p.extra ?? (p.sitio ? [{ label: t(lang, "Sitio", "Site"), href: p.sitio }] : [])).map((l) => (
+                        <a href={l.href} target="_blank" rel="noopener">
+                          {l.label} ↗
+                        </a>
+                      ))}
+                    </p>
+                  </div>
+                </article>
+              ))
+            }
+          </div>
         </div>
       </section>
 
       <section id="sj-stack" class="sj-sec">
         <p class="sj-k">{n(4)} · Stack</p>
-        <h2>{t(lang, "Lo que el viento no se lleva", "What the wind can't take")}</h2>
-        <p class="sj-p sj-nota sj-solo-vivo">
-          {t(lang, "Arrastrá las tecnologías. Con el Zonda, vuelan.", "Drag the technologies around. With the Zonda, they fly.")}
-          <button type="button" class="sj-mini" data-zonda-2>{t(lang, "Soplar", "Blow")}</button>
+        <h2>{t(lang, "Cancha de bochas", "The bocce field")}</h2>
+        <p class="sj-p sj-nota">
+          {t(
+            lang,
+            "En el valle hay piedras redondas que parecen bochas. Acá son las tecnologías que uso.",
+            "The valley has round stones that look like bocce balls. Here they're the technologies I use.",
+          )}
+          <span class="sj-solo-vivo">
+            {t(lang, " Arrastralas o soplá el Zonda.", " Drag them or blow the Zonda.")}
+            <button type="button" class="sj-mini" data-zonda-2>{t(lang, "Soplar", "Blow")}</button>
+          </span>
         </p>
         <div class="sj-caja" data-caja>
           {
             habilidades.map((h) => (
-              <span class={`sj-chip sj-${h.area}`} data-chip>
-                {h.nombre}
+              <span class={`sj-chip sj-${h.area}`} style={`--d:${diam(h.nombre)}px`} data-chip>
+                <span>{h.nombre}</span>
               </span>
             ))
           }
@@ -207,7 +261,13 @@ const n = (i: number) => String(i).padStart(2, "0");
       </section>
 
       <footer class="sj-pie">
-        <p>{t(lang, "Hecho en San Juan con Astro y matter-js. El Zonda es real; este, simulado.", "Made in San Juan with Astro and matter-js. The Zonda is real; this one is simulated.")}</p>
+        <p>
+          {t(
+            lang,
+            "Hecho en San Juan con Astro y matter-js. Ischigualasto es real; este, dibujado. El Zonda también es real; este, simulado.",
+            "Made in San Juan with Astro and matter-js. Ischigualasto is real; this one is drawn. The Zonda is real too; this one is simulated.",
+          )}
+        </p>
       </footer>
     </main>
   </div>
@@ -215,7 +275,7 @@ const n = (i: number) => String(i).padStart(2, "0");
 
 <script>
   import "@/scripts/zonda";
-  // el botón chico de la caja usa el mismo Zonda
+  // el botón chico de la cancha usa el mismo Zonda
   document.querySelector("[data-zonda-2]")?.addEventListener("click", () => {
     document.querySelector<HTMLButtonElement>("[data-zonda]")?.click();
   });
@@ -224,31 +284,33 @@ const n = (i: number) => String(i).padStart(2, "0");
 <style is:global>
   body:has(.sj) {
     margin: 0;
-    background: #2a0f1c;
+    background: #120f1c;
     overflow-x: clip;
   }
   .sj {
-    --vino: #5b1a33;
-    --vino-2: #3a1626;
-    --vino-3: #2a0f1c;
-    --cerro: #c9774a;
-    --ocre: #f0b04f;
-    --arena: #f8ecd8;
-    --arena-2: #f8ecd8b3;
-    --hoja: #7f9a45;
+    --noche: #0f1428;
+    --noche-2: #1a1d36;
+    --tierra: #2a1a1c;
+    --tierra-2: #1c1418;
+    --arcilla: #d8cdb8;
+    --rojo: #b7643f;
+    --ocre: #e7a65a;
+    --luna: #f4ecd6;
+    --arena: #f3eadb;
+    --arena-2: #f3eadbad;
     --viento: 0;
     --ix-ink: var(--arena);
     --ix-ink-2: var(--arena-2);
     --ix-accent: var(--ocre);
-    --ix-bg: var(--vino-2);
+    --ix-bg: var(--tierra-2);
     --ix-font: "Bricolage Grotesque", system-ui, sans-serif;
-    --mf-bg: #ffffff0f;
+    --mf-bg: #ffffff0d;
     --mf-ink: var(--arena);
     --mf-ink-2: var(--arena-2);
-    --mf-line: #f8ecd833;
+    --mf-line: #f3eadb33;
     --mf-accent: var(--ocre);
-    --mf-accent-ink: var(--vino-3);
-    --mf-radius: 14px;
+    --mf-accent-ink: var(--tierra-2);
+    --mf-radius: 12px;
     position: relative;
     color: var(--arena);
     font-family: "Bricolage Grotesque", system-ui, sans-serif;
@@ -284,14 +346,13 @@ const n = (i: number) => String(i).padStart(2, "0");
     pointer-events: none;
   }
   .sj-k {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
+    font: 500 12px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ocre);
   }
 
-  /* ── Cielo y cerros ──────────────────────────────────────── */
+  /* ── Cielo nocturno y formaciones ────────────────────────── */
   .sj-hero {
     position: relative;
     min-height: 100svh;
@@ -302,60 +363,117 @@ const n = (i: number) => String(i).padStart(2, "0");
   .sj-cielo {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, #f6c98a 0%, #e98f62 38%, #a6434b 64%, var(--vino) 100%);
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 78%, #b76a4a66, transparent 70%),
+      linear-gradient(180deg, #070a18 0%, var(--noche) 35%, #2b2443 62%, #6b3f45 80%, #8a5241 100%);
   }
-  .sj-sol {
+  .sj-estrellas {
     position: absolute;
-    right: 16%;
-    top: 18%;
-    width: clamp(90px, 12vw, 180px);
+    inset: 0 0 auto;
+    width: 100%;
+    height: 70%;
+    fill: #fffbe8;
+    opacity: calc(1 - var(--viento) * 0.8);
+  }
+  .sj-estrellas circle {
+    animation: sj-titila 3.5s ease-in-out infinite;
+  }
+  @keyframes sj-titila {
+    50% {
+      opacity: 0.35;
+    }
+  }
+  .sj-luna {
+    position: absolute;
+    right: 14%;
+    top: 12%;
+    width: clamp(90px, 11vw, 170px);
     aspect-ratio: 1;
     border-radius: 50%;
-    background: radial-gradient(circle, #fff3d6 0 45%, #ffd58a 60%, #ffd58a00 72%);
-    filter: blur(calc(var(--viento) * 6px));
-    opacity: calc(1 - var(--viento) * 0.55);
+    background:
+      radial-gradient(circle at 34% 38%, #d9cfb4 0 9%, transparent 10%),
+      radial-gradient(circle at 62% 60%, #ddd3b9 0 13%, transparent 14%),
+      radial-gradient(circle at 58% 28%, #e2d9c0 0 6%, transparent 7%),
+      radial-gradient(circle at 40% 40%, #fffaf0, var(--luna) 60%, #e6dcc2);
+    box-shadow:
+      0 0 60px 10px #f4ecd640,
+      0 0 160px 40px #f4ecd61a;
+    filter: blur(calc(var(--viento) * 3px));
+    opacity: calc(1 - var(--viento) * 0.45);
   }
-  .sj-cerro {
+  .sj-capa,
+  .sj-suelo,
+  .sj-bochas {
     position: absolute;
     left: -2%;
     width: 104%;
+  }
+  .sj-capa {
     transform: translateX(calc(var(--viento) * -10px));
   }
-  .sj-cerro-3 {
-    bottom: 24%;
-    height: 34%;
-    fill: #b8665a;
-    opacity: 0.75;
-  }
-  .sj-cerro-2 {
-    bottom: 16%;
+  .sj-capa-3 {
+    bottom: 20%;
     height: 30%;
-    fill: #8c3a45;
+    fill: #7a3a33;
   }
-  .sj-cerro-1 {
-    bottom: 12%;
-    height: 22%;
-    fill: #6a2238;
+  .sj-capa-3 .sj-veta {
+    fill: none;
+    stroke: #5e2b29;
+    stroke-width: 3;
   }
-  .sj-vina {
+  .sj-capa-2 {
+    bottom: 13%;
+    height: 26%;
+    fill: #8e8576;
+  }
+  .sj-forma {
     position: absolute;
-    left: 0;
+    bottom: 15%;
+    fill: #3d2b2c;
+  }
+  .sj-forma .sj-veta {
+    fill: none;
+    stroke: #2c1f21;
+    stroke-width: 3;
+  }
+  .sj-submarino {
+    left: 8%;
+    height: 34%;
+  }
+  .sj-hongo {
+    right: 10%;
+    height: 30%;
+  }
+  .sj-hongo path + path {
+    fill: none;
+    stroke: #3d2b2c;
+    stroke-width: 6;
+  }
+  .sj-suelo {
     bottom: 0;
-    width: 100%;
-    height: 15%;
-    background: linear-gradient(180deg, #5d2a2e, var(--vino));
-    stroke: var(--hoja);
-    stroke-width: 7;
-    stroke-dasharray: 2 9;
-    stroke-linecap: round;
-    opacity: 0.95;
+    height: 22%;
+    fill: #4a3a37;
+  }
+  .sj-bochas {
+    bottom: 0;
+    height: 22%;
+    fill: #8f8577;
+  }
+  .sj-bochas circle {
+    fill: #9b9183;
+    stroke: #6f665a;
+    stroke-width: 1.5;
+  }
+  .sj-bochas .sj-sombra {
+    fill: #00000059;
+    stroke: none;
   }
   .sj-bruma {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, #e9b26a, #c9774a);
-    mix-blend-mode: multiply;
-    opacity: calc(var(--viento) * 0.75);
+    background: linear-gradient(180deg, #8a6a4a, #c98a5a);
+    mix-blend-mode: soft-light;
+    opacity: calc(var(--viento) * 1.1);
   }
   .sj-hero-in {
     position: relative;
@@ -363,18 +481,16 @@ const n = (i: number) => String(i).padStart(2, "0");
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 96px 20px 18vh;
-  }
-  .sj-hero-in .sj-k {
-    color: var(--vino-2);
+    padding: 96px 20px 26vh;
   }
   .sj h1 {
     margin-top: 12px;
-    font-size: clamp(64px, 15vw, 210px);
+    font-size: clamp(64px, 14vw, 196px);
     font-weight: 800;
-    line-height: 0.82;
+    line-height: 0.84;
     letter-spacing: -0.05em;
-    color: var(--vino-3);
+    color: var(--luna);
+    text-shadow: 0 0 40px #f4ecd626;
   }
   .sj-linea {
     display: block;
@@ -384,27 +500,25 @@ const n = (i: number) => String(i).padStart(2, "0");
     will-change: transform;
   }
   .sj-linea + .sj-linea {
-    color: var(--arena);
-    text-shadow: 0 2px 0 #00000026;
+    color: var(--ocre);
   }
   .sj-bajada {
-    max-width: 46ch;
+    max-width: 48ch;
     margin-top: 24px;
-    font-size: clamp(17px, 1.6vw, 21px);
-    color: var(--vino-3);
-    font-weight: 600;
+    font-size: clamp(17px, 1.6vw, 20px);
+    color: var(--arena);
   }
   .sj-clima {
     display: flex;
     flex-wrap: wrap;
     gap: 6px 18px;
-    margin-top: 24px;
-    font-size: 14px;
-    color: var(--vino-3);
+    margin-top: 22px;
+    font: 500 13px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+    color: var(--arena-2);
     font-variant-numeric: tabular-nums;
   }
   .sj-clima b {
-    font-weight: 800;
+    color: var(--arena);
   }
   .sj-btn,
   .sj-mini {
@@ -416,12 +530,12 @@ const n = (i: number) => String(i).padStart(2, "0");
     padding: 0 22px;
     font: inherit;
     font-weight: 700;
-    color: var(--arena);
-    background: var(--vino-3);
+    color: var(--tierra-2);
+    background: var(--luna);
     border: 0;
     border-radius: 999px;
     cursor: pointer;
-    box-shadow: 0 10px 24px #2a0f1c59;
+    box-shadow: 0 0 32px #f4ecd640;
     transition: transform 0.2s;
   }
   .sj-btn:hover {
@@ -429,7 +543,6 @@ const n = (i: number) => String(i).padStart(2, "0");
   }
   .sj-btn[aria-pressed="true"] {
     background: var(--ocre);
-    color: var(--vino-3);
   }
   .sj-btn[aria-pressed="true"] svg {
     animation: sj-sopla 0.6s ease-in-out infinite;
@@ -452,7 +565,7 @@ const n = (i: number) => String(i).padStart(2, "0");
     padding: 0 14px;
     font-size: 14px;
     background: var(--ocre);
-    color: var(--vino-3);
+    box-shadow: none;
   }
   .sj:not(.sj-vivo) .sj-btn,
   .sj:not(.sj-vivo) .sj-clima,
@@ -460,11 +573,9 @@ const n = (i: number) => String(i).padStart(2, "0");
     display: none;
   }
 
-  /* ── Tierra: secciones ───────────────────────────────────── */
+  /* ── Secciones ───────────────────────────────────────────── */
   .sj-tierra {
-    background:
-      radial-gradient(ellipse at 20% 0%, #5b1a3380, transparent 50%),
-      linear-gradient(180deg, var(--vino) 0, var(--vino-2) 30%, var(--vino-3));
+    background: linear-gradient(180deg, #4a3a37 0, var(--tierra) 12%, var(--tierra-2));
   }
   .sj-sec {
     max-width: 1200px;
@@ -480,7 +591,7 @@ const n = (i: number) => String(i).padStart(2, "0");
     letter-spacing: -0.04em;
   }
   .sj-p {
-    max-width: 60ch;
+    max-width: 62ch;
     margin-top: 16px;
     color: var(--arena-2);
   }
@@ -501,8 +612,8 @@ const n = (i: number) => String(i).padStart(2, "0");
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--hoja);
-    box-shadow: 0 0 0 4px #7f9a4533;
+    background: var(--ocre);
+    box-shadow: 0 0 0 4px #e7a65a33;
   }
 
   /* Péndulos: giran alrededor del clip (--a lo mueve zonda.ts) */
@@ -519,7 +630,7 @@ const n = (i: number) => String(i).padStart(2, "0");
     height: 30px;
     margin-left: -7px;
     border-radius: 3px;
-    background: linear-gradient(90deg, #c9a46a, #e7c98f 50%, #b58a4f);
+    background: linear-gradient(90deg, #a98d63, #d7bd8c 50%, #957650);
     box-shadow: 0 2px 4px #0000004d;
   }
 
@@ -539,16 +650,16 @@ const n = (i: number) => String(i).padStart(2, "0");
     width: min(320px, 80%);
     margin: 20px auto 0;
     padding: 14px 14px 52px;
-    background: #fbf6ec;
-    color: var(--vino-3);
-    box-shadow: 0 24px 48px #00000059;
+    background: #f7f1e6;
+    color: var(--tierra-2);
+    box-shadow: 0 24px 48px #00000073;
   }
   .sj-polaroid img {
     display: block;
     width: 100%;
     aspect-ratio: 4 / 5;
     object-fit: cover;
-    filter: sepia(0.25) saturate(1.1);
+    filter: sepia(0.25) saturate(1.05);
   }
   .sj-polaroid figcaption {
     position: absolute;
@@ -559,150 +670,150 @@ const n = (i: number) => String(i).padStart(2, "0");
     font-weight: 600;
   }
 
-  .sj-parral {
+  /* Estratos: capas de roca, la más nueva arriba; --dx lo mueve el viento */
+  .sj-estratos {
+    list-style: none;
+    margin-top: 48px;
+    padding: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 24px 48px #00000059;
+  }
+  .sj-estrato {
+    --dx: 0px;
+    display: grid;
+    gap: 4px 28px;
+    padding: 22px clamp(18px, 3vw, 32px);
+    color: #1f1515;
+    background:
+      repeating-linear-gradient(176deg, transparent 0 9px, #00000012 9px 11px),
+      var(--capa);
+    transform: translateX(var(--dx));
+    clip-path: polygon(0 3%, 6% 0, 18% 4%, 31% 1%, 47% 5%, 62% 0, 78% 4%, 91% 1%, 100% 3%, 100% 100%, 0 100%);
+  }
+  @media (min-width: 768px) {
+    .sj-estrato {
+      grid-template-columns: 190px 1fr;
+    }
+  }
+  .sj-fecha {
+    font: 500 12px/1.5 "IBM Plex Mono", ui-monospace, monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+  .sj-estrato h3 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .sj-estrato h3 span {
+    font-weight: 600;
+    opacity: 0.75;
+  }
+  .sj-desc {
+    margin-top: 6px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .sj-estrato .sj-desc {
+    max-width: 70ch;
+    opacity: 0.85;
+  }
+
+  /* Hallazgos colgados de la cuadrícula de excavación */
+  .sj-grilla {
     position: relative;
     margin-top: 48px;
   }
-  .sj-alambre {
+  .sj-cuerda {
     position: absolute;
     left: -20px;
     right: -20px;
     top: 0;
     height: 2px;
-    background: #d9c3a0;
+    background: repeating-linear-gradient(90deg, #e6d3a8 0 10px, #c9b285 10px 12px);
     box-shadow: 0 1px 0 #0000004d;
   }
-  .sj-parral ol {
-    list-style: none;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 56px 20px;
-    padding: 30px 0 0;
-  }
-  .sj-colgada {
-    position: relative;
-    padding: 22px 18px 20px;
-    border-radius: 6px;
-    background: var(--arena);
-    color: var(--vino-3);
-    box-shadow: 0 18px 36px #00000059;
-  }
-  .sj-colgada::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 6px;
-    border-radius: 6px 6px 0 0;
-    background: var(--c, var(--vino));
-  }
-  .sj-datos {
-    --c: var(--vino);
-  }
-  .sj-web {
-    --c: var(--cerro);
-  }
-  .sj-qa {
-    --c: var(--hoja);
-  }
-  .sj-soporte {
-    --c: #8a7d6e;
-  }
-  .sj-fecha {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    opacity: 0.7;
-  }
-  .sj-colgada h3 {
-    margin-top: 6px;
-    font-size: 26px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-  }
-  .sj-rol {
-    font-weight: 600;
-  }
-  .sj-desc {
-    margin-top: 10px;
-    font-size: 14px;
-    line-height: 1.5;
-    opacity: 0.85;
-  }
-
   .sj-proy {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-    gap: 32px;
-    margin-top: 48px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 48px 24px;
+    padding-top: 30px;
   }
-  .sj-cajon {
+  .sj-hallazgo {
     position: relative;
-    overflow: hidden;
-    border-radius: 10px;
-    background: #4a1a2b;
-    border: 1px solid #f8ecd81f;
-    box-shadow: 0 20px 40px #0000004d;
-    transform-origin: 50% 0;
-  }
-  .sj-cajon img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    object-position: top;
-  }
-  .sj-cajon-body {
-    padding: 18px 20px 20px;
+    padding: 14px 14px 18px;
+    border-radius: 4px 4px 10px 10px;
+    background:
+      radial-gradient(circle at 50% 8px, var(--tierra-2) 0 5px, transparent 6px),
+      #d8c39b;
+    color: #2a1d17;
+    box-shadow: 0 20px 40px #00000066;
   }
   .sj-etiqueta {
-    display: inline-block;
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 700;
+    margin: 10px 0 10px;
+    padding-bottom: 8px;
+    font: 500 11px/1.4 "IBM Plex Mono", ui-monospace, monospace;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--vino-3);
-    background: var(--ocre);
-    border-radius: 3px;
+    border-bottom: 1px dashed #2a1d1766;
   }
-  .sj-cajon h3 {
+  .sj-hallazgo img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+    filter: sepia(0.35) contrast(1.05);
+    border: 1px solid #2a1d1733;
+  }
+  .sj-hallazgo h3 {
     margin-top: 12px;
-    font-size: 24px;
+    font-size: 21px;
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1.15;
     letter-spacing: -0.02em;
   }
-  .sj-cajon .sj-desc {
-    color: var(--arena-2);
-    opacity: 1;
+  .sj-hallazgo .sj-desc {
+    opacity: 0.85;
+    font-size: 14px;
   }
   .sj-links {
     display: flex;
     flex-wrap: wrap;
     gap: 2px 16px;
-    margin-top: 12px;
-    font-weight: 600;
+    margin-top: 10px;
+    font-weight: 700;
   }
   .sj-links a {
     display: inline-block;
     padding-block: 8px;
+    text-decoration-color: #2a1d1780;
+  }
+  .sj-hallazgo a:hover {
+    color: #8d3b22;
   }
 
+  /* Cancha de bochas */
   .sj-caja {
     position: relative;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
+    align-items: center;
     margin-top: 32px;
     padding: 20px;
-    border: 2px dashed #f8ecd83d;
     border-radius: 18px;
-    background: #00000026;
+    background:
+      radial-gradient(ellipse at 50% 120%, #00000040, transparent 60%),
+      repeating-linear-gradient(170deg, transparent 0 18px, #ffffff08 18px 20px),
+      #6a5a50;
+    box-shadow: inset 0 2px 20px #00000059;
   }
   .sj-caja-viva {
-    height: clamp(360px, 52vh, 480px);
+    height: clamp(380px, 54vh, 500px);
     padding: 0;
     overflow: hidden;
     touch-action: none;
@@ -712,34 +823,40 @@ const n = (i: number) => String(i).padStart(2, "0");
     cursor: grabbing;
   }
   .sj-chip {
-    display: inline-block;
-    padding: 10px 18px;
-    font-size: 16px;
+    display: grid;
+    place-items: center;
+    width: var(--d);
+    height: var(--d);
+    padding: 8px;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 14px;
     font-weight: 700;
-    white-space: nowrap;
-    border-radius: 999px;
-    background: var(--c, var(--vino));
-    color: var(--arena);
+    line-height: 1.1;
+    color: #2a1d17;
+    background: radial-gradient(circle at 34% 30%, #ece4d4, var(--c, #b3a893) 55%, #6d6355);
+    box-shadow:
+      inset -6px -8px 14px #00000040,
+      0 8px 14px #00000059;
     user-select: none;
   }
+  .sj-chip.sj-datos {
+    --c: #c47a52;
+  }
   .sj-chip.sj-web {
-    color: var(--vino-3);
+    --c: #b9ab90;
   }
   .sj-chip.sj-qa {
-    color: var(--vino-3);
+    --c: #a49786;
   }
   .sj-chip.sj-general {
-    --c: var(--arena);
-    color: var(--vino-3);
-  }
-  .sj-chip.sj-datos {
-    --c: #8c2f4b;
+    --c: #d6a35f;
   }
   .sj-caja-viva .sj-chip {
     position: absolute;
     left: 0;
     top: 0;
-    transform: translate(-200px, -200px);
+    transform: translate(-300px, -300px);
     will-change: transform;
   }
   .sj-est {
@@ -761,5 +878,23 @@ const n = (i: number) => String(i).padStart(2, "0");
     text-align: center;
     font-size: 13px;
     color: var(--arena-2);
+  }
+  @media (max-width: 760px) {
+    .sj-submarino {
+      left: -4%;
+      height: 24%;
+    }
+    .sj-hongo {
+      right: -2%;
+      height: 22%;
+    }
+    .sj-luna {
+      right: 20px;
+      top: 76px;
+      width: 72px;
+    }
+    .sj-hero-in {
+      padding-top: 168px;
+    }
   }
 </style>
